@@ -1,7 +1,7 @@
 # Party Commands Mod
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.4-blue.svg)](https://minecraft.net/)
-[![Fabric](https://img.shields.io/badge/Fabric-0.16.10-blue.svg)](https://fabricmc.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.10-blue.svg)](https://minecraft.net/)
+[![Fabric](https://img.shields.io/badge/Fabric-0.16.10+-blue.svg)](https://fabricmc.net/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-orange.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
