@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.partycommands.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ChatScreenMixin",
+    "CommandSuggestionsMixin",
+    "ClientPacketListenerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
