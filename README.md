@@ -24,7 +24,7 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 
 ## 📦 Installation
 
-1. Install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.4
+1. Install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.10
 2. Download the latest `PartyCommandsMod-*.jar` from [Releases](../../releases)
 3. Place the jar into your `.minecraft/mods` folder
 4. Launch the game and enjoy!
