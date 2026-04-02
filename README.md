@@ -2,7 +2,7 @@
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.10-blue.svg)](https://minecraft.net/)
 [![Fabric](https://img.shields.io/badge/Fabric-0.16.10+-blue.svg)](https://fabricmc.net/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-orange.svg)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-orange.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type party commands directly in chat with a `!` prefix — no need to manually use `/pc !command`.
@@ -15,19 +15,21 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 
 - 🚀 Type `!command` directly in chat — fast and intuitive
 - 🎮 No `/pc` prefix required
-- ⚙️ Toggle individual commands on/off via config
+- ⚙️ Toggle individual commands on/off via config GUI
 - 💬 Choose to respond in party chat, locally, or both
 - 🧠 Automatic party state tracking from Hypixel chat messages
 - 🔧 Built-in tab completion for all `!` commands
+- 🎨 Beautiful YACL config GUI
 
 ---
 
 ## 📦 Installation
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.10
-2. Download the latest `PartyCommandsMod-*.jar` from [Releases](../../releases)
-3. Place the jar into your `.minecraft/mods` folder
-4. Launch the game and enjoy!
+2. Install [YACL](https://modrinth.com/mod/yacl) (Yet Another Config Lib) - required dependency
+3. Download the latest `PartyCommandsMod-*.jar` from [Releases](../../releases)
+4. Place the jars into your `.minecraft/mods` folder
+5. Launch the game and enjoy!
 
 ---
 
@@ -43,6 +45,9 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 | `!location` | `!loc` | Show current location |
 | `!coords` | `!co` | Show current coordinates |
 | `!holding` | `!hold` | Show held item name |
+| `!status` | — | Show party status (members, leader) |
+| `!cd <time>` | `!countdown` | Start countdown (e.g., `!cd 60`, `!cd 5m`, `!cd 1h`) |
+| `!clear` | — | Clear current countdown |
 
 ### Party Management *(Leader only)*
 | Command | Alias | Description |
@@ -53,13 +58,20 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 | `!promote <player>` | — | Promote a member |
 | `!demote <player>` | — | Demote a member |
 | `!kick <player> [reason]` | `!k` | Kick a member from party |
+| `!disband` | — | Disband the party |
+| `!invite <player>` | `!inv` | Invite a player to party |
 
-### Dungeon & Kuudra Queue *(Leader only)*
+### Dungeon & Kuudra Queue
 | Command | Description |
 |---------|-------------|
-| `!f1` ~ `!f7` | Queue normal Catacombs floors |
-| `!m1` ~ `!m7` | Queue Master Mode Catacombs floors |
-| `!t1` ~ `!t5` | Queue Kuudra tiers |
+| `!f1` ~ `!f7` | Queue normal Catacombs floors (supports countdown: `!f7 60`) |
+| `!m1` ~ `!m7` | Queue Master Mode Catacombs floors (supports countdown: `!m7 60`) |
+| `!t1` ~ `!t5` | Queue Kuudra tiers (supports countdown: `!t5 60`) |
+
+### Party Commands
+| Command | Description |
+|---------|-------------|
+| `!leave` | Leave the party |
 
 ### Fun Commands
 | Command | Alias | Description |
@@ -67,12 +79,12 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 | `!cf` | `!coinflip` | Flip a coin (heads / tails) |
 | `!8ball` | — | Magic 8-ball answer |
 | `!dice` | — | Roll a dice (1–6) |
+| `!boop <player>` | — | Boop a player |
 
 ### Utility Commands
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `!boop <player>` | — | Boop a player |
-| `!invite <player>` | `!inv` | Invite a player to party |
+| `!forward` | — | Toggle party chat forwarding |
 | `!forward` | — | Toggle party chat forwarding |
 | `!reload` | — | Reload config |
 | `!ver` | `!version` | Show mod version info |
@@ -82,6 +94,7 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 | Command | Description |
 |---------|-------------|
 | `/partycmds` | Show usage help |
+| `/partycmds gui` | Open config GUI |
 | `/partycmds reload` | Reload configuration |
 | `/partycmds reset` | Reset tracked party state |
 
@@ -89,6 +102,15 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 
 ## ⚙️ Configuration
 
+### Config GUI (Recommended)
+Use `/partycmds gui` to open the YACL config GUI for easy configuration:
+- **General** — Basic settings (mod enabled, command prefix)
+- **Info Commands** — Toggle !ping, !tps, !fps, etc.
+- **Party Management** — Toggle !warp, !kick, !promote, etc.
+- **Fun Commands** — Toggle !cf, !8ball, !dice
+- **Response** — Where to show command responses
+
+### Config File
 Config file location: `.minecraft/config/partycommands.json`
 
 ```json
@@ -149,6 +171,7 @@ src/main/
 │   ├── PartyCommandsMod.kt
 │   ├── config/Config.kt
 │   ├── commands/
+│   ├── gui/                         # YACL Config GUI
 │   └── utils/
 └── resources/                       # fabric.mod.json, mixins, assets
 ```
@@ -159,6 +182,7 @@ src/main/
 
 - **Odin Mod** — Ping calculation logic and original feature inspiration
 - **Meteor Client** — Brigadier command system patterns
+- **YACL (YetAnotherConfigLib)** — Config GUI library by isXander
 - **Fabric Team** — Fabric Loader and API
 
 ---

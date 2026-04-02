@@ -12,6 +12,13 @@ build/
 .vscode/
 *.class
 
+# External repositories (for reference only, do not commit)
+MoulConfig/
+YetAnotherConfigLib/
+Skyblocker/
+cloth-config/
+*.patch
+
 # Kotlin
 .kotlin/
 

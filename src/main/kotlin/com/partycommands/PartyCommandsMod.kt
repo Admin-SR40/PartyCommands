@@ -3,7 +3,10 @@ package com.partycommands
 import com.partycommands.commands.Commands
 import com.partycommands.commands.PartyCommandHandler
 import com.partycommands.config.Config
+import com.partycommands.gui.ConfigGui
+import com.partycommands.utils.AutoPartyListUpdater
 import com.partycommands.utils.ChatListener
+import com.partycommands.utils.PartyListHandler
 import com.partycommands.utils.PartyUtils
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
@@ -22,11 +25,19 @@ class PartyCommandsMod : ClientModInitializer {
         Commands.init()
         PartyCommandHandler.init()
         ChatListener.init()
+        AutoPartyListUpdater.init()
         
         // 注册 /partycmds 配置命令
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(
                 ClientCommandManager.literal("partycmds")
+                    .then(ClientCommandManager.literal("gui")
+                        .executes { context ->
+                            ConfigGui.open()
+                            context.source.sendFeedback(Component.literal("${PREFIX}§aOpening config GUI..."))
+                            1
+                        }
+                    )
                     .then(ClientCommandManager.literal("reload")
                         .executes { context ->
                             Config.load()
@@ -43,6 +54,7 @@ class PartyCommandsMod : ClientModInitializer {
                         }
                     )
                     .executes { context ->
+                        context.source.sendFeedback(Component.literal("${PREFIX}§7Use /partycmds gui to open config GUI"))
                         context.source.sendFeedback(Component.literal("${PREFIX}§7Use /partycmds reload to reload config"))
                         context.source.sendFeedback(Component.literal("${PREFIX}§7Use /partycmds reset to reset party state"))
                         1

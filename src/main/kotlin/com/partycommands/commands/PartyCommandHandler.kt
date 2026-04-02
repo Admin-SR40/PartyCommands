@@ -50,6 +50,8 @@ object PartyCommandHandler {
     fun init() {
         ClientTickEvents.START_CLIENT_TICK.register { _ ->
             ServerUtils.updateTps()
+            PartyListHandler.onTick()
+            CountdownManager.onTick()
         }
         registerCommands()
         Commands.rebuildDispatcher()
@@ -70,7 +72,11 @@ object PartyCommandHandler {
         Commands.add(object : Command("ping", "Show latency") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.ping) respond("Current Ping: ${ServerUtils.currentPing}ms")
+                    if (Config.settings.ping) {
+                        val ping = ServerUtils.currentPing
+                        val color = getPingColor(ping)
+                        respond(formatResponse("Current Ping", "${ping}ms", color))
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -79,7 +85,15 @@ object PartyCommandHandler {
         Commands.add(object : Command("tps", "Show server TPS") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.tps) respond("Current TPS: ${ServerUtils.averageTps.toFixed(1)}")
+                    if (Config.settings.tps) {
+                        val tps = ServerUtils.averageTps
+                        if (tps < 0) {
+                            respond(formatResponse("Current TPS", "§7Updating TPS, please wait...", ""))
+                        } else {
+                            val color = getTpsColor(tps)
+                            respond(formatResponse("Current TPS", tps.toFixed(1), color))
+                        }
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -88,7 +102,11 @@ object PartyCommandHandler {
         Commands.add(object : Command("fps", "Show current FPS") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.fps) respond("Current FPS: ${ServerUtils.currentFps}")
+                    if (Config.settings.fps) {
+                        val fps = ServerUtils.currentFps
+                        val color = getFpsColor(fps)
+                        respond(formatResponse("Current FPS", fps.toString(), color))
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -99,7 +117,7 @@ object PartyCommandHandler {
                 builder.executes {
                     if (Config.settings.time) {
                         val time = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"))
-                        respond("Current Time: $time")
+                        respond(formatResponse("Current Time", time, "§f"))
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -109,7 +127,7 @@ object PartyCommandHandler {
         Commands.add(object : Command("location", "Show current location", "loc") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.location) respond("Current Location: Unknown")
+                    if (Config.settings.location) respond(formatResponse("Current Location", "Unknown", "§7"))
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -120,7 +138,7 @@ object PartyCommandHandler {
                 builder.executes {
                     if (Config.settings.location) {
                         val pos = getPositionString()
-                        respond("Current Coordinates: $pos")
+                        respond(formatResponse("Current Coordinates", pos, "§f"))
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -132,7 +150,19 @@ object PartyCommandHandler {
                 builder.executes {
                     if (Config.settings.location) {
                         val item = mc.player?.mainHandItem?.displayName?.string ?: "Air"
-                        respond("Holding: $item")
+                        respond(formatResponse("Holding", item, "§f"))
+                    }
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        Commands.add(object : Command("status", "Show party status") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.executes {
+                    if (Config.settings.status) {
+                        PartyListHandler.startWaiting()
+                        sendCommand("p list")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -143,7 +173,10 @@ object PartyCommandHandler {
         Commands.add(object : Command("cf", "Coin flip", "coinflip") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.coinflip) respond(if (Random.nextBoolean()) "heads" else "tails")
+                    if (Config.settings.coinflip) {
+                        val result = if (Random.nextBoolean()) "§6heads" else "§ftails"
+                        respond(formatResponse("Coinflip", result, ""))
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -152,7 +185,9 @@ object PartyCommandHandler {
         Commands.add(object : Command("8ball", "Magic 8 Ball") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.eightball) respond(eightBallResponses.random())
+                    if (Config.settings.eightball) {
+                        respond(formatResponse("8-Ball", eightBallResponses.random(), "§d"))
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -161,7 +196,17 @@ object PartyCommandHandler {
         Commands.add(object : Command("dice", "Roll a dice") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.dice) respond((1..6).random().toString())
+                    if (Config.settings.dice) {
+                        val roll = (1..6).random()
+                        val color = when (roll) {
+                            6 -> "§2"  // 深绿色
+                            5 -> "§a"  // 绿色
+                            4 -> "§e"  // 黄色
+                            3 -> "§6"  // 橙色
+                            else -> "§c" // 红色
+                        }
+                        respond(formatResponse("Dice Roll", roll.toString(), color))
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -174,9 +219,9 @@ object PartyCommandHandler {
                     if (Config.settings.warp) {
                         if (PartyUtils.isLeader()) {
                             sendCommand("party warp")
-                            modMessage("§aExecuted: /party warp")
+                            respond(formatResponse("Warp", "§aSent warp request", ""))
                         } else {
-                            modMessage("§cYou are not the leader!")
+                            respond(formatResponse("Error", "§cYou are not the leader!", ""))
                         }
                     }
                     Command.SINGLE_SUCCESS
@@ -190,9 +235,9 @@ object PartyCommandHandler {
                     if (Config.settings.allinvite) {
                         if (PartyUtils.isLeader()) {
                             sendCommand("party settings allinvite")
-                            modMessage("§aExecuted: /party settings allinvite")
+                            respond(formatResponse("All Invite", "§aEnabled", ""))
                         } else {
-                            modMessage("§cYou are not the leader!")
+                            respond(formatResponse("Error", "§cYou are not the leader!", ""))
                         }
                     }
                     Command.SINGLE_SUCCESS
@@ -209,19 +254,19 @@ object PartyCommandHandler {
                     }
                     .executes { ctx ->
                         if (!PartyUtils.isInParty) {
-                            modMessage("§cYou are not in a party!")
+                            respond(formatResponse("Error", "§cYou are not in a party!", ""))
                         } else if (PartyUtils.isLeader()) {
                             val input = StringArgumentType.getString(ctx, "player")
                             val target = PartyUtils.findMember(input)
                             sendCommand("p transfer $target")
-                            modMessage("§aExecuted: /p transfer $target")
+                            respond(formatResponse("Transfer", "§aTransferred to $target", ""))
                         } else {
-                            modMessage("§cYou are not the leader!")
+                            respond(formatResponse("Error", "§cYou are not the leader!", ""))
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
-                    modMessage("§cUsage: !transfer <player>")
+                    respond(formatResponse("Usage", "§c!transfer <player>", ""))
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -240,18 +285,16 @@ object PartyCommandHandler {
                                 val input = StringArgumentType.getString(ctx, "player")
                                 val target = PartyUtils.findMember(input)
                                 sendCommand("party promote $target")
-                                modMessage("§aExecuted: /party promote $target")
+                                respond(formatResponse("Promote", "§aPromoted $target", ""))
                             } else {
-                                modMessage("§cYou are not the leader!")
+                                respond(formatResponse("Error", "§cYou are not the leader!", ""))
                             }
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
                     if (Config.settings.promote) {
-                        val playerName = mc.player?.name?.string ?: "Unknown"
-                        sendCommand("party promote $playerName")
-                        modMessage("§aExecuted: /party promote $playerName")
+                        respond(formatResponse("Usage", "§c!promote <player>", ""))
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -271,18 +314,44 @@ object PartyCommandHandler {
                                 val input = StringArgumentType.getString(ctx, "player")
                                 val target = PartyUtils.findMember(input)
                                 sendCommand("party demote $target")
-                                modMessage("§aExecuted: /party demote $target")
+                                respond(formatResponse("Demote", "§aDemoted $target", ""))
                             } else {
-                                modMessage("§cYou are not the leader!")
+                                respond(formatResponse("Error", "§cYou are not the leader!", ""))
                             }
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
                     if (Config.settings.demote) {
-                        val playerName = mc.player?.name?.string ?: "Unknown"
-                        sendCommand("party demote $playerName")
-                        modMessage("§aExecuted: /party demote $playerName")
+                        respond(formatResponse("Usage", "§c!demote <player>", ""))
+                    }
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        Commands.add(object : Command("disband", "Disband party") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.executes {
+                    if (Config.settings.disband) {
+                        if (PartyUtils.isLeader()) {
+                            sendCommand("p disband")
+                            respond(formatResponse("Disband", "§aParty disbanded", ""))
+                        } else {
+                            respond(formatResponse("Error", "§cYou are not the leader!", ""))
+                        }
+                    }
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        Commands.add(object : Command("leave", "Leave party") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.executes {
+                    if (Config.settings.leave) {
+                        sendCommand("p leave")
+                        respond(formatResponse("Leave", "§aLeft party", ""))
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -301,12 +370,12 @@ object PartyCommandHandler {
                             if (Config.settings.kick) {
                                 if (PartyUtils.isLeader()) {
                                     val target = StringArgumentType.getString(ctx, "player")
-                                    val reason = StringArgumentType.getString(ctx, "reason")
+                                    val reason = StringArgumentType.getString(ctx, "reason").noControlCodes
                                     sendPartyChat("Kicking $target : $reason")
                                     sendCommand("p kick $target")
-                                    modMessage("§aExecuted: /p kick $target")
+                                    respond(formatResponse("Kick", "§aKicked $target", ""))
                                 } else {
-                                    modMessage("§cYou are not the leader!")
+                                    respond(formatResponse("Error", "§cYou are not the leader!", ""))
                                 }
                             }
                             Command.SINGLE_SUCCESS
@@ -316,33 +385,46 @@ object PartyCommandHandler {
                             if (PartyUtils.isLeader()) {
                                 val target = StringArgumentType.getString(ctx, "player")
                                 sendCommand("p kick $target")
-                                modMessage("§aExecuted: /p kick $target")
+                                respond(formatResponse("Kick", "§aKicked $target", ""))
                             } else {
-                                modMessage("§cYou are not the leader!")
+                                respond(formatResponse("Error", "§cYou are not the leader!", ""))
                             }
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
-                    modMessage("§cUsage: !kick <player> [reason]")
+                    respond(formatResponse("Usage", "§c!kick <player> [reason]", ""))
                     Command.SINGLE_SUCCESS
                 }
             }
         })
 
-        // 地牢排队命令
+        // 地牢排队命令（支持倒计时，不需要队伍）
         floorInstances.keys.forEach { cmd ->
             Commands.add(object : Command(cmd, "Queue $cmd") {
                 override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                    // 支持可选的时间参数：!f7 60
+                    builder.then(Command.argument("seconds", StringArgumentType.word())
+                        .executes { ctx ->
+                            if (Config.settings.queueInstance) {
+                                val seconds = StringArgumentType.getString(ctx, "seconds").toIntOrNull()
+                                if (seconds != null && seconds > 0) {
+                                    // 最大5分钟
+                                    val actualSeconds = minOf(seconds, 300)
+                                    CountdownManager.startCountdown(actualSeconds, cmd.uppercase())
+                                } else {
+                                    respond(formatResponse("Error", "§cInvalid time!", ""))
+                                }
+                            }
+                            Command.SINGLE_SUCCESS
+                        })
+                    
+                    // 无参数：直接排队
                     builder.executes {
                         if (Config.settings.queueInstance) {
-                            if (!PartyUtils.isInParty || PartyUtils.isLeader()) {
-                                val instance = floorInstances[cmd]!!
-                                modMessage("§8Entering -> §e${cmd.uppercase()}")
-                                sendCommand("joininstance $instance")
-                            } else {
-                                modMessage("§cYou are not the leader!")
-                            }
+                            val instance = floorInstances[cmd]!!
+                            respond(formatResponse("Queue", "§e${cmd.uppercase()}", ""))
+                            sendCommand("joininstance $instance")
                         }
                         Command.SINGLE_SUCCESS
                     }
@@ -358,12 +440,12 @@ object PartyCommandHandler {
                         if (Config.settings.boop) {
                             val target = StringArgumentType.getString(ctx, "player")
                             sendCommand("boop $target")
-                            modMessage("§aExecuted: /boop $target")
+                            respond(formatResponse("Boop", "§aBooped $target", ""))
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
-                    modMessage("§cUsage: !boop <player>")
+                    respond(formatResponse("Usage", "§c!boop <player>", ""))
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -376,12 +458,12 @@ object PartyCommandHandler {
                         if (Config.settings.invite) {
                             val target = StringArgumentType.getString(ctx, "player")
                             sendCommand("p invite $target")
-                            modMessage("§aExecuted: /p invite $target")
+                            respond(formatResponse("Invite", "§aInvited $target", ""))
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
-                    modMessage("§cUsage: !invite <player>")
+                    respond(formatResponse("Usage", "§c!invite <player>", ""))
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -395,7 +477,7 @@ object PartyCommandHandler {
                     Config.load()
                     Commands.rebuildDispatcher()
                     val status = if (Config.settings.respondInPartyChat) "§aON" else "§cOFF"
-                    modMessage("§fParty chat forwarding: $status")
+                    respond(formatResponse("Forward", status, ""))
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -406,7 +488,70 @@ object PartyCommandHandler {
                 builder.executes {
                     Config.load()
                     Commands.rebuildDispatcher()
-                    modMessage("§aConfig reloaded!")
+                    respond(formatResponse("Config", "§aReloaded", ""))
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        Commands.add(object : Command("cd", "Start countdown", "countdown") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.then(Command.argument("time", StringArgumentType.word())
+                    .executes { ctx ->
+                        if (Config.settings.countdown) {
+                            val timeInput = StringArgumentType.getString(ctx, "time")
+                            val seconds = CountdownManager.parseTime(timeInput)
+                            if (seconds != null) {
+                                CountdownManager.startCountdown(seconds, "Custom")
+                            } else {
+                                respond(formatResponse("Error", "§cInvalid time format! Use: 60, 5m, 1h (max 12h)", ""))
+                            }
+                        }
+                        Command.SINGLE_SUCCESS
+                    })
+                builder.executes {
+                    if (Config.settings.countdown) {
+                        respond(formatResponse("Usage", "§c!cd <time> (e.g., 60, 5m, 1h)", ""))
+                    }
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        Commands.add(object : Command("clear", "Clear countdown") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.executes {
+                    if (Config.settings.countdown) {
+                        CountdownManager.clearCountdown()
+                    }
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        // Note 命令
+        Commands.add(object : Command("note", "Send saved note to party") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.then(Command.argument("message", StringArgumentType.greedyString())
+                    .executes { ctx ->
+                        val message = StringArgumentType.getString(ctx, "message")
+                        Config.settings.note = message
+                        Config.save()
+                        respond(formatResponse("Note", "§aSaved: §f$message", ""))
+                        Command.SINGLE_SUCCESS
+                    })
+                builder.executes {
+                    val note = Config.settings.note.noControlCodes
+                    if (note.isNotEmpty()) {
+                        if (PartyUtils.isInParty) {
+                            sendPartyChat(note)
+                            modMessage(formatResponse("Note", "§aSent to party", ""))
+                        } else {
+                            modMessage(formatResponse("Note", "§cYou are not in a party!", ""))
+                        }
+                    } else {
+                        respond(formatResponse("Note", "§cNo note saved. Use !note <message> to set one.", ""))
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -415,11 +560,11 @@ object PartyCommandHandler {
         Commands.add(object : Command("ver", "Show version info", "version") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    rawMessage("§b===== PartyCommands =====")
-                    rawMessage("§fVersion: §a0.1")
-                    rawMessage("§fBased on: §aOdin Mod / Meteor Client")
-                    rawMessage("§fAuthor: §aAdmin_SR40")
-                    rawMessage("§b========================")
+                    rawMessage("§b§l===== PartyCommands =====")
+                    rawMessage("§eVersion: §a0.1")
+                    rawMessage("§eBased on: §aOdin Mod / Meteor Client")
+                    rawMessage("§eAuthor: §aAdmin_SR40")
+                    rawMessage("§b§l========================")
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -431,7 +576,8 @@ object PartyCommandHandler {
      */
     private fun respond(message: String) {
         if (Config.settings.respondInPartyChat && PartyUtils.isInParty) {
-            sendPartyChat("CMD » $message")
+            // 移除颜色代码后再发送到聊天
+            sendPartyChat("CMD >> " + message.noControlCodes)
         }
         if (Config.settings.showResponseLocally) {
             modMessage("§f$message")
@@ -442,31 +588,38 @@ object PartyCommandHandler {
      * 显示帮助
      */
     private fun showHelp() {
-        rawMessage("§b===== Available Commands =====")
-        rawMessage("§f!help §7- Show this message")
-        rawMessage("§f!warp §7- Warp members to this hub")
-        rawMessage("§f!allinvite §7- Enable all invite")
-        rawMessage("§f!pt <player> §7- Transfer party leader")
-        rawMessage("§f!promote <player> §7- Promote member")
-        rawMessage("§f!demote <player> §7- Demote member")
-        rawMessage("§f!kick <player> §7- Kick member from party")
-        rawMessage("§f!ping §7- Show latency")
-        rawMessage("§f!tps §7- Show TPS")
-        rawMessage("§f!fps §7- Show FPS")
-        rawMessage("§f!time §7- Show current time")
-        rawMessage("§f!coords §7- Show coordinates")
-        rawMessage("§f!loc §7- Show location")
-        rawMessage("§f!hold §7- Show held item")
-        rawMessage("§f!cf §7- Coin flip")
-        rawMessage("§f!8ball §7- Magic 8 Ball")
-        rawMessage("§f!dice §7- Roll a dice")
-        rawMessage("§f!t1-5 §7- Kuudra")
-        rawMessage("§f!f1-7 / m1-7 §7- Dungeon")
-        rawMessage("§f!boop <player> §7- Boop a player")
-        rawMessage("§f!invite <player> §7- Invite player to party")
-        rawMessage("§f!forward §7- Toggle party chat forwarding")
-        rawMessage("§f!reload §7- Reload config")
-        rawMessage("§f!ver §7- Show version info")
-        rawMessage("§b============================")
+        rawMessage("§b§l===== Available Commands =====")
+        rawMessage("§e!help §7- Show this message")
+        rawMessage("§e!warp §7- Warp members to this hub")
+        rawMessage("§e!allinvite §7- Enable all invite")
+        rawMessage("§e!pt <player> §7- Transfer party leader")
+        rawMessage("§e!promote <player> §7- Promote member")
+        rawMessage("§e!demote <player> §7- Demote member")
+        rawMessage("§e!kick <player> §7- Kick member from party")
+        rawMessage("§e!disband §7- Disband the party")
+        rawMessage("§e!leave §7- Leave the party")
+        rawMessage("§e!ping §7- Show latency")
+        rawMessage("§e!tps §7- Show TPS")
+        rawMessage("§e!fps §7- Show FPS")
+        rawMessage("§e!time §7- Show current time")
+        rawMessage("§e!coords §7- Show coordinates")
+        rawMessage("§e!loc §7- Show location")
+        rawMessage("§e!hold §7- Show held item")
+        rawMessage("§e!status §7- Show party status")
+        rawMessage("§e!cd <time> §7- Countdown (60, 5m, 1h)")
+        rawMessage("§e!clear §7- Clear countdown")
+        rawMessage("§e!cf §7- Coin flip")
+        rawMessage("§e!8ball §7- Magic 8 Ball")
+        rawMessage("§e!dice §7- Roll a dice")
+        rawMessage("§e!t1-5 §7- Kuudra")
+        rawMessage("§e!f1-7 / m1-7 §7- Dungeon")
+        rawMessage("§e!note [message] §7- Send/set note to party")
+        rawMessage("§e!boop <player> §7- Boop a player")
+        rawMessage("§e!invite <player> §7- Invite player to party")
+        rawMessage("§e!forward §7- Toggle party chat forwarding")
+        rawMessage("§e!reload §7- Reload config")
+        rawMessage("§e!ver §7- Show version info")
+        rawMessage("§b§l============================")
     }
+
 }

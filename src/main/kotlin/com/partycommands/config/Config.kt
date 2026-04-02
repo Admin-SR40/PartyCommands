@@ -28,6 +28,7 @@ object Config {
         var fps: Boolean = true,
         var time: Boolean = true,
         var location: Boolean = true,
+        var status: Boolean = true,
         
         // 队伍管理命令（需要队长权限）
         var warp: Boolean = true,
@@ -35,6 +36,11 @@ object Config {
         var kick: Boolean = true,
         var promote: Boolean = true,
         var demote: Boolean = true,
+        var transfer: Boolean = true,
+        var disband: Boolean = true,
+        
+        // 队伍命令（不需要队长权限）
+        var leave: Boolean = true,
         
         // 娱乐命令
         var coinflip: Boolean = true,
@@ -47,10 +53,15 @@ object Config {
         // 其他
         var boop: Boolean = true,
         var invite: Boolean = true,
+        var countdown: Boolean = true,
         
         // 响应设置
         var respondInPartyChat: Boolean = true,
-        var showResponseLocally: Boolean = true
+        var showResponseLocally: Boolean = true,
+        
+        // Note 功能
+        var note: String = "",
+        var countdownSound: Boolean = true
     )
     
     fun load() {

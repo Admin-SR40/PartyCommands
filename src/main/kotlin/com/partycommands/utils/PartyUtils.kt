@@ -5,10 +5,16 @@ import net.minecraft.client.Minecraft
 object PartyUtils {
     private val mc = Minecraft.getInstance()
     
-    // 队伍成员列表
+    // 队伍成员列表（纯净名字，用于匹配）
     val members = mutableListOf<String>()
     
-    // 队长名称
+    // 成员名字到带颜色名字的映射
+    private val memberColors = mutableMapOf<String, String>()
+    
+    // 掉线成员列表（纯净名字）
+    private val offlineMembers = mutableSetOf<String>()
+    
+    // 队长名称（纯净名字）
     var partyLeader: String? = null
         internal set
     
@@ -25,11 +31,18 @@ object PartyUtils {
     
     /**
      * 添加成员
+     * @param playerName 纯净玩家名
+     * @param coloredName 带颜色代码的名字（可选）
      */
-    fun addMember(playerName: String) {
+    fun addMember(playerName: String, coloredName: String? = null) {
         if (!isInParty) isInParty = true
-        if (playerName !in members) {
-            members.add(playerName)
+        val cleanName = playerName.noControlCodes
+        if (cleanName !in members) {
+            members.add(cleanName)
+        }
+        // 保存带颜色的名字
+        if (coloredName != null) {
+            memberColors[cleanName] = coloredName
         }
     }
     
@@ -37,8 +50,10 @@ object PartyUtils {
      * 移除成员
      */
     fun removeMember(playerName: String) {
-        if (playerName !in members) return
-        members.remove(playerName)
+        val cleanName = playerName.noControlCodes
+        if (cleanName !in members) return
+        members.remove(cleanName)
+        memberColors.remove(cleanName)
         if (members.isEmpty()) {
             disband()
         }
@@ -49,8 +64,46 @@ object PartyUtils {
      */
     fun disband() {
         members.clear()
+        memberColors.clear()
+        offlineMembers.clear()
         partyLeader = null
         isInParty = false
+    }
+    
+    /**
+     * 标记成员为掉线状态
+     */
+    fun markOffline(playerName: String) {
+        val cleanName = playerName.noControlCodes.lowercase()
+        offlineMembers.add(cleanName)
+    }
+    
+    /**
+     * 标记成员为在线状态（重连）
+     */
+    fun markOnline(playerName: String) {
+        val cleanName = playerName.noControlCodes.lowercase()
+        offlineMembers.remove(cleanName)
+    }
+    
+    /**
+     * 检查成员是否掉线
+     */
+    fun isOffline(playerName: String): Boolean {
+        return offlineMembers.contains(playerName.noControlCodes.lowercase())
+    }
+    
+    /**
+     * 移除成员时同时清除掉线状态
+     */
+    fun removeMemberWithOffline(playerName: String) {
+        val cleanName = playerName.noControlCodes
+        members.remove(cleanName)
+        memberColors.remove(cleanName)
+        offlineMembers.remove(cleanName)
+        if (members.isEmpty()) {
+            disband()
+        }
     }
     
     /**
@@ -58,6 +111,13 @@ object PartyUtils {
      */
     fun findMember(partialName: String): String {
         return members.find { it.contains(partialName, ignoreCase = true) } ?: partialName
+    }
+    
+    /**
+     * 获取带颜色的成员名字
+     */
+    fun getMemberWithColor(cleanName: String): String {
+        return memberColors[cleanName] ?: "§7$cleanName"
     }
     
     /**

@@ -17,6 +17,8 @@ object ChatListener {
     private val partyInvite = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) invited ((?:\\[[^]]*?])? ?)?(\\w{1,16}) to the party! They have 60 seconds to accept.$")
     private val leaderDisconnected = Regex("^The party leader, ((?:\\[[^]]*?])? ?)?(\\w{1,16}) has disconnected, they have 5 minutes to rejoin before the party is disbanded\\.$")
     private val leaderRejoined = Regex("^The party leader ((?:\\[[^]]*?])? ?)?(\\w{1,16}) has rejoined\\.$")
+    private val memberDisconnected = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) has disconnected, they have 5 minutes to rejoin before they are removed from the party\\.$")
+    private val memberRejoined = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) has rejoined\\.$")
     private val memberFormat = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16})$")
     private val membersList = Regex("^Party (Leader|Moderators|Members): (.+)$")
     private val dungeonJoin = Regex("^Party Finder > (\\w{1,16}) joined the dungeon group! ")
@@ -65,15 +67,27 @@ object ChatListener {
             return
         }
         
-        // 离线被踢
+        // 离线被踢（彻底移除）
         kickedOffline.find(message)?.let {
-            PartyUtils.removeMember(it.groupValues[2])
+            PartyUtils.removeMemberWithOffline(it.groupValues[2])
             return
         }
         
-        // 断开连接被移除
+        // 断开连接被移除（彻底移除）
         kickedDisconnected.find(message)?.let {
-            PartyUtils.removeMember(it.groupValues[2])
+            PartyUtils.removeMemberWithOffline(it.groupValues[2])
+            return
+        }
+        
+        // 队长断开连接（标记为掉线）
+        leaderDisconnected.find(message)?.let {
+            PartyUtils.markOffline(it.groupValues[2])
+            return
+        }
+        
+        // 队长重新连接（标记为在线）
+        leaderRejoined.find(message)?.let {
+            PartyUtils.markOnline(it.groupValues[2])
             return
         }
         
@@ -101,7 +115,20 @@ object ChatListener {
         
         // 队长重新加入
         leaderRejoined.find(message)?.let {
+            PartyUtils.markOnline(it.groupValues[2])
             PartyUtils.partyLeader = it.groupValues[2]
+            return
+        }
+        
+        // 成员断开连接（标记为掉线）
+        memberDisconnected.find(message)?.let {
+            PartyUtils.markOffline(it.groupValues[2])
+            return
+        }
+        
+        // 成员重新连接（标记为在线）
+        memberRejoined.find(message)?.let {
+            PartyUtils.markOnline(it.groupValues[2])
             return
         }
         
@@ -141,6 +168,53 @@ object ChatListener {
         kuudraJoin.find(message)?.let {
             PartyUtils.addMember(it.groupValues[2])
             return
+        }
+        
+        // 检测 !cancel（任何聊天，只要包含队友名字）
+        handleCancelCommand(message)
+    }
+    
+    /**
+     * 处理 !cancel 命令
+     * 检测队伍聊天中的 !cancel 并取消地牢倒计时
+     */
+    private fun handleCancelCommand(message: String) {
+        // 必须包含 !cancel
+        if (!message.contains("!cancel")) return
+        
+        // 获取当前玩家名字
+        val myName = mc.player?.name?.string ?: return
+        
+        // 移除颜色代码后再匹配（避免颜色代码干扰）
+        val cleanMessage = message.replace(Regex("§[0-9a-fk-or]"), "")
+        
+        // 从各种聊天格式中提取发送者名字
+        val patterns = listOf(
+            // Party > [RANK] PlayerName: message
+            Regex("^Party > (?:\\[.+?] )?(.+?):"),
+            // Guild > [RANK] PlayerName: message
+            Regex("^Guild > (?:\\[.+?] )?(.+?):"),
+            // [222] [RANK] PlayerName: message (一般聊天)
+            Regex("^\\[\\d+\\] (?:\\[.+?] )?(.+?):"),
+            // [RANK] PlayerName: message (简化格式)
+            Regex("^(?:\\[.+?] )?(.+?):")
+        )
+        
+        for (pattern in patterns) {
+            val match = pattern.find(cleanMessage)
+            if (match != null) {
+                val senderRaw = match.groupValues[1].trim()
+                // 提取纯净名字（移除 rank）
+                val senderClean = senderRaw.replace(Regex("\\[.+?]\\s*"), "").trim()
+                
+                // 如果是自己发送的，跳过
+                if (senderClean.equals(myName, ignoreCase = true)) {
+                    return
+                }
+                // 取消倒计时，使用纯净名字
+                CountdownManager.tryCancelFromPartyChat(senderClean)
+                return
+            }
         }
     }
 }
