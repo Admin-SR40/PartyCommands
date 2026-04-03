@@ -8,6 +8,7 @@ object ChatListener {
     // Hypixel 聊天正则表达式
     private val joinedSelf = Regex("^You have joined ((?:\\[[^]]*?])? ?)?(\\w{1,16})'s? party!$")
     private val joinedOther = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) joined the party\\.$")
+    private val joinedLobby = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) joined the lobby!$")
     private val leftParty = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) has left the party\\.$")
     private val kickedParty = Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) has been removed from the party\\.$")
     private val kickedOffline = Regex("^Kicked ((?:\\[[^]]*?])? ?)?(\\w{1,16}) because they were offline\\.$")
@@ -52,6 +53,17 @@ object ChatListener {
             PartyUtils.addMember(it.groupValues[2])
             PartyUtils.partyLeader = it.groupValues[2]
             PartyUtils.addMember(mc.player?.name?.string ?: return)
+            return
+        }
+        
+        // 加入大厅（切换大厅时刷新队伍状态）
+        joinedLobby.find(message)?.let {
+            val playerName = it.groupValues[2]
+            val myName = mc.player?.name?.string
+            // 如果是自己加入大厅，刷新队伍状态
+            if (myName != null && playerName.equals(myName, ignoreCase = true)) {
+                AutoPartyListUpdater.refresh()
+            }
             return
         }
         
@@ -134,8 +146,22 @@ object ChatListener {
         
         // 邀请
         partyInvite.find(message)?.let {
-            PartyUtils.addMember(it.groupValues[2])
-            if (PartyUtils.partyLeader == null) PartyUtils.partyLeader = it.groupValues[2]
+            val inviter = it.groupValues[2]
+            val invited = it.groupValues[4]
+            val myName = mc.player?.name?.string
+            
+            // 如果之前不在队伍中，说明这是自己创建的队，自己是队长
+            if (!PartyUtils.isInParty) {
+                PartyUtils.addMember(inviter)
+                PartyUtils.partyLeader = inviter
+                // 把自己也加入队伍（如果是邀请者）
+                if (myName != null && inviter.equals(myName, ignoreCase = true)) {
+                    PartyUtils.addMember(myName)
+                }
+            } else {
+                // 已经在队伍中，只添加邀请者
+                PartyUtils.addMember(inviter)
+            }
             return
         }
         
@@ -147,16 +173,8 @@ object ChatListener {
             }
         }
         
-        // 成员列表
-        membersList.find(message)?.let { match ->
-            val type = match.groupValues[1]
-            match.groupValues[2].split(" ●").forEach { segment ->
-                val memberMatch = memberFormat.find(segment.trim()) ?: return@forEach
-                PartyUtils.addMember(memberMatch.groupValues[2])
-                if (type == "Leader") PartyUtils.partyLeader = memberMatch.groupValues[2]
-            }
-            return
-        }
+        // 成员列表 - 由 PartyListHandler 处理，这里不再处理以避免冲突
+        // membersList.find(message)?.let { ... }
         
         // 地牢加入
         dungeonJoin.find(message)?.let {

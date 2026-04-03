@@ -2,10 +2,10 @@
 
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.10-blue.svg)](https://minecraft.net/)
 [![Fabric](https://img.shields.io/badge/Fabric-0.16.10+-blue.svg)](https://fabricmc.net/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-orange.svg)](https://kotlinlang.org/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-orange.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type party commands directly in chat with a `!` prefix — no need to manually use `/pc !command`.
+A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party commands. Type `!command` directly in chat — no `/pc` prefix needed.
 
 > Based on concepts from **Odin Mod** and **Meteor Client**.
 
@@ -13,23 +13,21 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 
 ## ✨ Features
 
-- 🚀 Type `!command` directly in chat — fast and intuitive
-- 🎮 No `/pc` prefix required
-- ⚙️ Toggle individual commands on/off via config GUI
-- 💬 Choose to respond in party chat, locally, or both
-- 🧠 Automatic party state tracking from Hypixel chat messages
-- 🔧 Built-in tab completion for all `!` commands
-- 🎨 Beautiful YACL config GUI
+- **Direct Commands** — Type `!command` without switching to party chat
+- **Smart Completion** — Tab completion for all commands, filters other mods' `!` commands
+- **Command History** — Press `↑` to recall previous `!` commands
+- **Auto Queue** — Dungeon countdown with automatic queue execution
+- **Party Tracking** — Automatic member/leader status tracking from chat
+- **YACL Config** — In-game GUI for toggling commands (`/partycmds gui`)
 
 ---
 
 ## 📦 Installation
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.10
-2. Install [YACL](https://modrinth.com/mod/yacl) (Yet Another Config Lib) - required dependency
-3. Download the latest `PartyCommandsMod-*.jar` from [Releases](../../releases)
-4. Place the jars into your `.minecraft/mods` folder
-5. Launch the game and enjoy!
+2. Install [YACL](https://modrinth.com/mod/yacl) (Yet Another Config Lib)
+3. Download `PartyCommandsMod-*.jar` from [Releases](../../releases)
+4. Place in `.minecraft/mods`
 
 ---
 
@@ -38,80 +36,82 @@ A standalone **Fabric** client-side mod for Hypixel SkyBlock that lets you type 
 ### Info Commands
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `!ping` | — | Show current latency (ms) |
-| `!tps` | — | Show estimated server TPS |
+| `!ping` | — | Show latency (color-coded) |
+| `!tps` | — | Show server TPS |
 | `!fps` | — | Show current FPS |
-| `!time` | — | Show local date and time |
+| `!time` | — | Show local date/time |
 | `!location` | `!loc` | Show current location |
-| `!coords` | `!co` | Show current coordinates |
-| `!holding` | `!hold` | Show held item name |
-| `!status` | — | Show party status (members, leader) |
-| `!cd <time>` | `!countdown` | Start countdown (e.g., `!cd 60`, `!cd 5m`, `!cd 1h`) |
-| `!clear` | — | Clear current countdown |
+| `!coords` | `!co` | Show coordinates |
+| `!holding` | `!hold` | Show held item |
+| `!status` | — | Show party members & leader |
+| `!cd <time>` | `!countdown` | Start countdown (`60`, `5m`, `1h`) |
+| `!clear` | — | Clear active countdown |
 
 ### Party Management *(Leader only)*
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `!warp` | `!w` | Warp all party members |
+| `!warp` | `!w` | Warp party members |
 | `!allinvite` | `!allinv` | Enable all invite |
-| `!transfer <player>` | `!pt` | Transfer party leadership |
-| `!promote <player>` | — | Promote a member |
-| `!demote <player>` | — | Demote a member |
-| `!kick <player> [reason]` | `!k` | Kick a member from party |
-| `!disband` | — | Disband the party |
-| `!invite <player>` | `!inv` | Invite a player to party |
-
-### Dungeon & Kuudra Queue
-| Command | Description |
-|---------|-------------|
-| `!f1` ~ `!f7` | Queue normal Catacombs floors (supports countdown: `!f7 60`) |
-| `!m1` ~ `!m7` | Queue Master Mode Catacombs floors (supports countdown: `!m7 60`) |
-| `!t1` ~ `!t5` | Queue Kuudra tiers (supports countdown: `!t5 60`) |
+| `!transfer <player>` | `!pt` | Transfer leadership |
+| `!promote <player>` | — | Promote member |
+| `!demote <player>` | — | Demote member |
+| `!kick <player> [reason]` | `!k` | Kick member (reason optional) |
+| `!disband` | — | Disband party |
 
 ### Party Commands
-| Command | Description |
-|---------|-------------|
-| `!leave` | Leave the party |
-
-### Fun Commands
 | Command | Alias | Description |
 |---------|-------|-------------|
-| `!cf` | `!coinflip` | Flip a coin (heads / tails) |
-| `!8ball` | — | Magic 8-ball answer |
-| `!dice` | — | Roll a dice (1–6) |
-| `!boop <player>` | — | Boop a player |
+| `!leave` | — | Leave party |
+| `!invite <player>` | `!inv` | Invite player |
+
+### Dungeon & Kuudra
+| Command | Description |
+|---------|-------------|
+| `!f1` ~ `!f7` | Queue Catacombs floors |
+| `!m1` ~ `!m7` | Queue Master Mode floors |
+| `!t1` ~ `!t5` | Queue Kuudra tiers |
+
+All support countdown: `!f7 60` → counts down → auto-queues
+
+### Fun Commands *(via `!fun`)*
+| Command | Description |
+|---------|-------------|
+| `!fun cf` | Coin flip (heads/tails) |
+| `!fun 8ball` | Magic 8-ball |
+| `!fun dice` | Roll 1-6 |
+| `!fun boop <player>` | Boop a player |
+| `!fun random [min] [max]` | Random number (default 1-100) |
 
 ### Utility Commands
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `!forward` | — | Toggle party chat forwarding |
-| `!forward` | — | Toggle party chat forwarding |
-| `!reload` | — | Reload config |
-| `!ver` | `!version` | Show mod version info |
-| `!help` | `!h` | Show help message |
-
-### Mod Settings Commands
 | Command | Description |
 |---------|-------------|
-| `/partycmds` | Show usage help |
+| `!note [message]` | Save/send note to party |
+| `!forward` | Toggle party chat forwarding |
+| `!gui` | Open config GUI |
+| `!reload` | Reload config |
+| `!ver` | Show version |
+| `!help` | Show help |
+
+### Mod Settings
+| Command | Description |
+|---------|-------------|
+| `/partycmds` | Show usage |
 | `/partycmds gui` | Open config GUI |
-| `/partycmds reload` | Reload configuration |
-| `/partycmds reset` | Reset tracked party state |
+| `/partycmds reload` | Reload config |
+| `/partycmds reset` | Reset party state |
 
 ---
 
 ## ⚙️ Configuration
 
-### Config GUI (Recommended)
-Use `/partycmds gui` to open the YACL config GUI for easy configuration:
-- **General** — Basic settings (mod enabled, command prefix)
-- **Info Commands** — Toggle !ping, !tps, !fps, etc.
-- **Party Management** — Toggle !warp, !kick, !promote, etc.
-- **Fun Commands** — Toggle !cf, !8ball, !dice
-- **Response** — Where to show command responses
+Use `/partycmds gui` for in-game configuration:
+- **General** — Mod enabled, command prefix
+- **Info Commands** — Toggle ping, tps, fps, etc.
+- **Party Management** — Toggle warp, kick, promote, etc.
+- **Fun Commands** — Toggle cf, 8ball, dice, boop
+- **Response** — Where to show command outputs
 
-### Config File
-Config file location: `.minecraft/config/partycommands.json`
+Config file: `.minecraft/config/partycommands.json`
 
 ```json
 {
@@ -120,73 +120,69 @@ Config file location: `.minecraft/config/partycommands.json`
   "ping": true,
   "tps": true,
   "fps": true,
-  "time": true,
-  "location": true,
   "warp": true,
-  "allinvite": true,
   "kick": true,
-  "promote": true,
-  "demote": true,
   "coinflip": true,
-  "eightball": true,
-  "dice": true,
   "queueInstance": true,
-  "boop": true,
-  "invite": true,
   "respondInPartyChat": true,
-  "showResponseLocally": true
+  "showResponseLocally": true,
+  "countdownSound": true
 }
 ```
-
-### Config Options
-- **`enabled`** — Master toggle for the mod
-- **`prefix`** — Prefix for party commands (default: `!`)
-- **Individual command toggles** — Enable/disable specific `!` commands
-- **`respondInPartyChat`** — Send command responses to party chat
-- **`showResponseLocally`** — Show command responses in your own chat HUD
 
 ---
 
 ## 🛠️ Development
 
-### Requirements
-- JDK 21 or newer
-- Gradle (wrapper included)
-
 ### Build
 ```bash
 ./gradlew build
 ```
+Output: `build/libs/PartyCommandsMod-0.1.jar`
 
-The compiled jar will be located at:
-```
-build/libs/PartyCommandsMod-0.1.jar
-```
+### Requirements
+- JDK 21+
+- Gradle (wrapper included)
 
 ### Project Structure
 ```
 src/main/
-├── java/com/partycommands/mixin/    # Mixin injections
-├── kotlin/com/partycommands/        # Main logic
+├── java/com/partycommands/mixin/
+│   ├── ChatMixin.java
+│   ├── ChatScreenMixin.java
+│   ├── CommandSuggestionsMixin.java
+│   └── ClientPacketListenerMixin.java
+├── kotlin/com/partycommands/
 │   ├── PartyCommandsMod.kt
-│   ├── config/Config.kt
 │   ├── commands/
-│   ├── gui/                         # YACL Config GUI
+│   │   ├── Command.kt
+│   │   ├── Commands.kt
+│   │   └── PartyCommandHandler.kt
+│   ├── config/
+│   │   └── Config.kt
+│   ├── gui/
+│   │   └── ConfigGui.kt
 │   └── utils/
-└── resources/                       # fabric.mod.json, mixins, assets
+│       ├── ChatListener.kt
+│       ├── ChatUtils.kt
+│       ├── PartyListHandler.kt
+│       ├── PartyUtils.kt
+│       ├── CountdownManager.kt
+│       └── ServerUtils.kt
+└── resources/
 ```
 
 ---
 
 ## 🙏 Credits
 
-- **Odin Mod** — Ping calculation logic and original feature inspiration
-- **Meteor Client** — Brigadier command system patterns
-- **YACL (YetAnotherConfigLib)** — Config GUI library by isXander
+- **Odin Mod** — Ping logic and feature inspiration
+- **Meteor Client** — Brigadier patterns
+- **YACL** — Config GUI by isXander
 - **Fabric Team** — Fabric Loader and API
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT License — see [LICENSE](LICENSE)

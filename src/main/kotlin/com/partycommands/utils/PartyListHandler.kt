@@ -19,11 +19,20 @@ object PartyListHandler {
     // 标记上一条消息是否为"不在队伍"
     private var lastMessageWasNotInParty = false
     
+    // 标记下一个分隔符是否需要被拦截
+    private var shouldInterceptNextSeparator = false
+    
     // /p list 输出的正则
     private val notInPartyPattern = Regex("^You are not currently in a party\\.$")
     private val partySizePattern = Regex("^Party Members \\((\\d+)\\)$")
     private val leaderPattern = Regex("^Party Leader: (.+)$")
     private val membersPattern = Regex("^Party Members: (.+)$")
+    
+    // 需要拦截后面分隔符的消息
+    private val interceptSeparatorPatterns = listOf(
+        Regex("^Party Finder > .+ joined the dungeon group!"),
+        Regex("^\\[.+?] .+ joined the party\\.$")
+    )
     
     /**
      * 开始等待 /p list 输出
@@ -70,9 +79,32 @@ object PartyListHandler {
      * 处理聊天消息，返回 true 表示已拦截
      */
     fun handleMessage(text: String): Boolean {
-        if (!isWaitingForList) return false
-        
         val trimmed = text.trim()
+        
+        // 检测是否需要拦截后面的分隔符
+        for (pattern in interceptSeparatorPatterns) {
+            if (pattern.containsMatchIn(trimmed)) {
+                shouldInterceptNextSeparator = true
+                return false // 不拦截这条消息本身
+            }
+        }
+        
+        // 如果需要拦截这个分隔符
+        if (shouldInterceptNextSeparator && (trimmed.contains("---") || trimmed.startsWith("-"))) {
+            shouldInterceptNextSeparator = false
+            return true
+        }
+        
+        // 如果检测到 /p list 的输出格式但不在等待模式，自动开始收集
+        if (!isWaitingForList && trimmed.startsWith("Party Members (")) {
+            isWaitingForList = true
+            silentMode = true  // 静默模式，不显示给用户
+            collectedLines.clear()
+            collectedLines.add(trimmed)
+            return true
+        }
+        
+        if (!isWaitingForList) return false
         
         // 检测分隔线（开头或结尾的）
         if (trimmed.contains("---") || trimmed.startsWith("-")) {
@@ -137,24 +169,55 @@ object PartyListHandler {
             
             // 解析队长
             leaderPattern.find(line)?.let {
-                leader = formatMember(it.groupValues[1])
+                val leaderName = it.groupValues[1]
+                leader = formatMember(leaderName)
+                // 清理：颜色代码 + rank + ●
+                val cleanName = leaderName.noControlCodes
+                    .replace("[MVP++]", "")
+                    .replace("[MVP+]", "")
+                    .replace("[MVP]", "")
+                    .replace("[VIP+]", "")
+                    .replace("[VIP]", "")
+                    .replace("[YOUTUBE]", "")
+                    .replace("[ADMIN]", "")
+                    .replace("[GM]", "")
+                    .replace("[MOD]", "")
+                    .replace("[HELPER]", "")
+                    .replace("●", "")
+                    .trim()
+                PartyUtils.partyLeader = cleanName
+                PartyUtils.addMember(cleanName, leaderName)
                 return@let
             }
             
             // 解析成员
             membersPattern.find(line)?.let { match ->
                 val membersText = match.groupValues[1]
-                // 按 ● 分割
-                membersText.split("●").forEach { member ->
+                // 先去掉颜色代码，再分割
+                val cleanedText = membersText.noControlCodes
+                cleanedText.split("●").forEach { member ->
                     val trimmed = member.trim()
                     if (trimmed.isNotEmpty()) {
-                        members.add(formatMember(trimmed))
+                        val formatted = formatMember(trimmed)
+                        members.add(formatted)
+                        // 清理：rank
+                        val cleanName = trimmed
+                            .replace("[MVP++]", "")
+                            .replace("[MVP+]", "")
+                            .replace("[MVP]", "")
+                            .replace("[VIP+]", "")
+                            .replace("[VIP]", "")
+                            .replace("[YOUTUBE]", "")
+                            .replace("[ADMIN]", "")
+                            .replace("[GM]", "")
+                            .replace("[MOD]", "")
+                            .replace("[HELPER]", "")
+                            .trim()
+                        PartyUtils.addMember(cleanName, trimmed)
                     }
                 }
             }
         }
-        
-        // 显示结果
         displayResult(leader, members, memberCount)
     }
     
@@ -167,8 +230,18 @@ object PartyListHandler {
             leaderPattern.find(line)?.let {
                 val leaderName = it.groupValues[1]
                 // 提取纯净名字
-                val cleanName = leaderName.replace(Regex("§[0-9a-fk-or]"), "")
-                    .replace(Regex("\\[.+?]\\s*"), "")
+                val cleanName = leaderName.noControlCodes
+                    .replace("[MVP++]", "")
+                    .replace("[MVP+]", "")
+                    .replace("[MVP]", "")
+                    .replace("[VIP+]", "")
+                    .replace("[VIP]", "")
+                    .replace("[YOUTUBE]", "")
+                    .replace("[ADMIN]", "")
+                    .replace("[GM]", "")
+                    .replace("[MOD]", "")
+                    .replace("[HELPER]", "")
+                    .replace("●", "")
                     .trim()
                 PartyUtils.partyLeader = cleanName
                 PartyUtils.addMember(cleanName, leaderName)
@@ -184,8 +257,17 @@ object PartyListHandler {
                     val bulletColor = memberMatch.groupValues[1] // ● 的颜色
                     val memberName = memberMatch.groupValues[2].trim()
                     
-                    val cleanName = memberName.replace(Regex("§[0-9a-fk-or]"), "")
-                        .replace(Regex("\\[.+?]\\s*"), "")
+                    val cleanName = memberName.noControlCodes
+                        .replace("[MVP++]", "")
+                        .replace("[MVP+]", "")
+                        .replace("[MVP]", "")
+                        .replace("[VIP+]", "")
+                        .replace("[VIP]", "")
+                        .replace("[YOUTUBE]", "")
+                        .replace("[ADMIN]", "")
+                        .replace("[GM]", "")
+                        .replace("[MOD]", "")
+                        .replace("[HELPER]", "")
                         .trim()
                     
                     PartyUtils.addMember(cleanName, memberName)
@@ -248,14 +330,19 @@ object PartyListHandler {
             rawMessage("§e§lLeader: §7Unknown")
         }
         
-        // 第三行：成员（把自己加入列表，不包括队长）
+        // 第三行：成员（过滤掉队长和自己）
         val otherMembers = members.filter { 
-            leader == null || !it.noControlCodes.equals(leader.noControlCodes, ignoreCase = true)
+            val memberClean = it.noControlCodes
+            // 过滤掉队长
+            val isLeader = leader != null && memberClean.equals(leader.noControlCodes, ignoreCase = true)
+            // 过滤掉自己
+            val isSelf = memberClean.equals(myName, ignoreCase = true)
+            !isLeader && !isSelf
         }.toMutableList()
         
-        // 如果不是队长，把自己加入成员列表
+        // 如果不是队长，把自己加入成员列表（使用粉色，其他 rank 没用过）
         if (!isLeader && myName.isNotEmpty()) {
-            otherMembers.add(0, "§aYou")
+            otherMembers.add(0, "§dYou")
         }
         
         // 统计在线/离线成员数

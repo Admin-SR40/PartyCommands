@@ -29,7 +29,9 @@ fun rawMessage(message: String) {
  * 发送到队伍聊天
  */
 fun sendPartyChat(message: String) {
+    println("[PartyCommands DEBUG] sendPartyChat: $message")
     mc.execute {
+        println("[PartyCommands DEBUG] Executing: /pc $message")
         mc.player?.connection?.sendCommand("pc $message")
     }
 }
@@ -38,6 +40,7 @@ fun sendPartyChat(message: String) {
  * 发送普通聊天消息
  */
 fun sendChatMessage(message: String) {
+    println("[PartyCommands DEBUG] sendChatMessage: $message")
     mc.execute {
         mc.player?.connection?.sendChat(message)
     }
@@ -47,7 +50,9 @@ fun sendChatMessage(message: String) {
  * 发送命令
  */
 fun sendCommand(command: String) {
+    println("[PartyCommands DEBUG] sendCommand: $command")
     mc.execute {
+        println("[PartyCommands DEBUG] Executing: /$command")
         mc.player?.connection?.sendCommand(command)
     }
 }

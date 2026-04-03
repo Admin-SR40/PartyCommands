@@ -20,6 +20,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import com.mojang.brigadier.suggestion.Suggestion;
 
 @Mixin(CommandSuggestions.class)
 public abstract class CommandSuggestionsMixin {
@@ -50,6 +52,37 @@ public abstract class CommandSuggestionsMixin {
 
     @Shadow
     private void updateUsageInfo() {}
+
+    /**
+     * 额外的过滤点，确保无论 suggestions 从哪里来都会被过滤
+     */
+    @Inject(method = "showSuggestions", at = @At("HEAD"))
+    private void onShowSuggestions(boolean bl, CallbackInfo ci) {
+        String value = this.input.getValue();
+        String prefix = Config.INSTANCE.getSettings().getPrefix();
+        
+        // 只有当输入以我们的前缀开头时，才进行过滤
+        if (value.startsWith(prefix) && this.pendingSuggestions != null && this.pendingSuggestions.isDone()) {
+            try {
+                Suggestions suggestions = this.pendingSuggestions.getNow(null);
+                if (suggestions != null) {
+                    // 过滤掉以 ! 开头的 suggestions（这些是其他 Mod 的）
+                    List<Suggestion> filtered = suggestions.getList().stream()
+                        .filter(s -> !s.getText().startsWith("!"))
+                        .collect(Collectors.toList());
+                    
+                    // 如果有变化，替换 pendingSuggestions
+                    if (filtered.size() != suggestions.getList().size()) {
+                        this.pendingSuggestions = CompletableFuture.completedFuture(
+                            new Suggestions(suggestions.getRange(), filtered)
+                        );
+                    }
+                }
+            } catch (Exception e) {
+                // 忽略异常，保持原有行为
+            }
+        }
+    }
 
     @Inject(method = "updateCommandInfo", at = @At("HEAD"), cancellable = true)
     private void onUpdateCommandInfo(CallbackInfo ci) {
@@ -90,6 +123,14 @@ public abstract class CommandSuggestionsMixin {
                     this.pendingSuggestions = Commands.DISPATCHER.getCompletionSuggestions(this.currentParse, cursor);
                 }
 
+                this.pendingSuggestions = this.pendingSuggestions.thenApply(suggestions -> {
+                    // 过滤掉以 ! 开头的 suggestions（这些是其他 Mod 的）
+                    List<Suggestion> filtered = suggestions.getList().stream()
+                        .filter(s -> !s.getText().startsWith("!"))
+                        .collect(Collectors.toList());
+                    return new Suggestions(suggestions.getRange(), filtered);
+                });
+                
                 this.pendingSuggestions.thenRun(() -> {
                     if (this.pendingSuggestions.isDone() && this.allowSuggestions) {
                         // 确保没有显示过期的 suggestion

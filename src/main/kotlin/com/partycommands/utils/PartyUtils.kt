@@ -31,12 +31,25 @@ object PartyUtils {
     
     /**
      * 添加成员
-     * @param playerName 纯净玩家名
-     * @param coloredName 带颜色代码的名字（可选）
+     * @param playerName 玩家名（会自动清理颜色代码、rank 和 ●）
      */
     fun addMember(playerName: String, coloredName: String? = null) {
         if (!isInParty) isInParty = true
+        // 清理颜色代码、rank 和 ● 符号
         val cleanName = playerName.noControlCodes
+            .replace("[MVP++]", "")
+            .replace("[MVP+]", "")
+            .replace("[MVP]", "")
+            .replace("[VIP+]", "")
+            .replace("[VIP]", "")
+            .replace("[YOUTUBE]", "")
+            .replace("[ADMIN]", "")
+            .replace("[GM]", "")
+            .replace("[MOD]", "")
+            .replace("[HELPER]", "")
+            .replace("●", "")
+            .trim()
+        if (cleanName.isEmpty()) return
         if (cleanName !in members) {
             members.add(cleanName)
         }

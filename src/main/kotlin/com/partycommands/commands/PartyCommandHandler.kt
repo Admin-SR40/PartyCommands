@@ -3,6 +3,7 @@ package com.partycommands.commands
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.partycommands.config.Config
+import com.partycommands.gui.ConfigGui
 import com.partycommands.utils.*
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.minecraft.client.Minecraft
@@ -169,44 +170,100 @@ object PartyCommandHandler {
             }
         })
 
-        // 娱乐命令
-        Commands.add(object : Command("cf", "Coin flip", "coinflip") {
+        // 娱乐命令 - 合并到 !fun
+        Commands.add(object : Command("fun", "Fun commands") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
-                builder.executes {
-                    if (Config.settings.coinflip) {
-                        val result = if (Random.nextBoolean()) "§6heads" else "§ftails"
-                        respond(formatResponse("Coinflip", result, ""))
-                    }
-                    Command.SINGLE_SUCCESS
-                }
-            }
-        })
-
-        Commands.add(object : Command("8ball", "Magic 8 Ball") {
-            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
-                builder.executes {
-                    if (Config.settings.eightball) {
-                        respond(formatResponse("8-Ball", eightBallResponses.random(), "§d"))
-                    }
-                    Command.SINGLE_SUCCESS
-                }
-            }
-        })
-
-        Commands.add(object : Command("dice", "Roll a dice") {
-            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
-                builder.executes {
-                    if (Config.settings.dice) {
-                        val roll = (1..6).random()
-                        val color = when (roll) {
-                            6 -> "§2"  // 深绿色
-                            5 -> "§a"  // 绿色
-                            4 -> "§e"  // 黄色
-                            3 -> "§6"  // 橙色
-                            else -> "§c" // 红色
+                // !fun cf - 抛硬币
+                builder.then(Command.literal("cf")
+                    .executes {
+                        if (Config.settings.coinflip) {
+                            val result = if (Random.nextBoolean()) "§6heads" else "§ftails"
+                            respond(formatResponse("Coinflip", result, ""))
                         }
-                        respond(formatResponse("Dice Roll", roll.toString(), color))
-                    }
+                        Command.SINGLE_SUCCESS
+                    })
+                
+                // !fun 8ball - 魔法8号球
+                builder.then(Command.literal("8ball")
+                    .executes {
+                        if (Config.settings.eightball) {
+                            respond(formatResponse("8-Ball", eightBallResponses.random(), "§d"))
+                        }
+                        Command.SINGLE_SUCCESS
+                    })
+                
+                // !fun dice - 掷骰子
+                builder.then(Command.literal("dice")
+                    .executes {
+                        if (Config.settings.dice) {
+                            val roll = (1..6).random()
+                            val color = when (roll) {
+                                6 -> "§2"  // 深绿色
+                                5 -> "§a"  // 绿色
+                                4 -> "§e"  // 黄色
+                                3 -> "§6"  // 橙色
+                                else -> "§c" // 红色
+                            }
+                            respond(formatResponse("Dice Roll", roll.toString(), color))
+                        }
+                        Command.SINGLE_SUCCESS
+                    })
+                
+                // !fun boop <player> - boop玩家
+                builder.then(Command.literal("boop")
+                    .then(Command.argument("player", StringArgumentType.word())
+                        .executes { ctx ->
+                            if (Config.settings.boop) {
+                                val target = StringArgumentType.getString(ctx, "player")
+                                sendCommand("boop $target")
+                                respond(formatResponse("Boop", "§aBooped $target", ""))
+                            }
+                            Command.SINGLE_SUCCESS
+                        })
+                    .executes {
+                        respond(formatResponse("Usage", "§c!fun boop <player>", ""))
+                        Command.SINGLE_SUCCESS
+                    })
+                
+                // !fun random [min] [max] - 随机数
+                builder.then(Command.literal("random")
+                    .then(Command.argument("min", StringArgumentType.word())
+                        .then(Command.argument("max", StringArgumentType.word())
+                            .executes { ctx ->
+                                val minStr = StringArgumentType.getString(ctx, "min")
+                                val maxStr = StringArgumentType.getString(ctx, "max")
+                                val min = minStr.toIntOrNull()
+                                val max = maxStr.toIntOrNull()
+                                
+                                if (min == null || max == null) {
+                                    respond(formatResponse("Error", "§cInvalid numbers! Usage: !fun random <min> <max>", ""))
+                                } else {
+                                    val actualMin = minOf(min, max)
+                                    val actualMax = maxOf(min, max)
+                                    val result = (actualMin..actualMax).random()
+                                    respond("§bRandom Value: §e$result §7[§f$actualMin§7-§f$actualMax§7]")
+                                }
+                                Command.SINGLE_SUCCESS
+                            })
+                        .executes { ctx ->
+                            val maxStr = StringArgumentType.getString(ctx, "min")
+                            val max = maxStr.toIntOrNull()
+                            if (max == null || max < 1) {
+                                respond(formatResponse("Error", "§cInvalid number! Usage: !fun random <max>", ""))
+                            } else {
+                                val result = (1..max).random()
+                                respond("§bRandom Value: §e$result §7[§f1§7-§f$max§7]")
+                            }
+                            Command.SINGLE_SUCCESS
+                        })
+                    .executes {
+                        val result = (1..100).random()
+                        respond("§bRandom Value: §e$result §7[§f1§7-§f100§7]")
+                        Command.SINGLE_SUCCESS
+                    })
+                
+                builder.executes {
+                    respond(formatResponse("Fun Commands", "§ecf, 8ball, dice, boop <player>, random [min] [max]", ""))
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -249,7 +306,15 @@ object PartyCommandHandler {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.then(Command.argument("player", StringArgumentType.word())
                     .suggests { _, suggestionsBuilder ->
-                        PartyUtils.members.forEach { suggestionsBuilder.suggest(it) }
+                        val myName = mc.player?.name?.string ?: ""
+                        PartyUtils.members
+                            .filter { 
+                                // 清理 ● 和空格后再比较
+                                val cleanMember = it.replace("●", "").trim()
+                                !cleanMember.equals(myName, ignoreCase = true) 
+                            }
+                            .distinct()
+                            .forEach { suggestionsBuilder.suggest(it) }
                         suggestionsBuilder.buildFuture()
                     }
                     .executes { ctx ->
@@ -276,7 +341,14 @@ object PartyCommandHandler {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.then(Command.argument("player", StringArgumentType.word())
                     .suggests { _, suggestionsBuilder ->
-                        PartyUtils.members.forEach { suggestionsBuilder.suggest(it) }
+                        val myName = mc.player?.name?.string ?: ""
+                        PartyUtils.members
+                            .filter { 
+                                val cleanMember = it.replace("●", "").trim()
+                                !cleanMember.equals(myName, ignoreCase = true) 
+                            }
+                            .distinct()
+                            .forEach { suggestionsBuilder.suggest(it) }
                         suggestionsBuilder.buildFuture()
                     }
                     .executes { ctx ->
@@ -305,7 +377,14 @@ object PartyCommandHandler {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.then(Command.argument("player", StringArgumentType.word())
                     .suggests { _, suggestionsBuilder ->
-                        PartyUtils.members.forEach { suggestionsBuilder.suggest(it) }
+                        val myName = mc.player?.name?.string ?: ""
+                        PartyUtils.members
+                            .filter { 
+                                val cleanMember = it.replace("●", "").trim()
+                                !cleanMember.equals(myName, ignoreCase = true) 
+                            }
+                            .distinct()
+                            .forEach { suggestionsBuilder.suggest(it) }
                         suggestionsBuilder.buildFuture()
                     }
                     .executes { ctx ->
@@ -362,17 +441,35 @@ object PartyCommandHandler {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.then(Command.argument("player", StringArgumentType.word())
                     .suggests { _, suggestionsBuilder ->
-                        PartyUtils.members.forEach { suggestionsBuilder.suggest(it) }
+                        val myName = mc.player?.name?.string ?: ""
+                        PartyUtils.members
+                            .filter { 
+                                val cleanMember = it.replace("●", "").trim()
+                                !cleanMember.equals(myName, ignoreCase = true) 
+                            }
+                            .distinct()
+                            .forEach { suggestionsBuilder.suggest(it) }
                         suggestionsBuilder.buildFuture()
                     }
                     .then(Command.argument("reason", StringArgumentType.greedyString())
                         .executes { ctx ->
+                            println("[PartyCommands DEBUG] !kick with reason executed")
                             if (Config.settings.kick) {
                                 if (PartyUtils.isLeader()) {
-                                    val target = StringArgumentType.getString(ctx, "player")
+                                    val input = StringArgumentType.getString(ctx, "player")
+                                    val target = PartyUtils.findMember(input)
                                     val reason = StringArgumentType.getString(ctx, "reason").noControlCodes
+                                    println("[PartyCommands DEBUG] Kick input='$input', target='$target', reason='$reason'")
+                                    println("[PartyCommands DEBUG] PartyUtils.members: ${PartyUtils.members}")
+                                    // 先发送原因到队伍聊天
                                     sendPartyChat("Kicking $target : $reason")
-                                    sendCommand("p kick $target")
+                                    // 延迟 500ms 再踢出，确保消息先显示
+                                    Thread {
+                                        Thread.sleep(500)
+                                        mc.execute {
+                                            sendCommand("p kick $target")
+                                        }
+                                    }.start()
                                     respond(formatResponse("Kick", "§aKicked $target", ""))
                                 } else {
                                     respond(formatResponse("Error", "§cYou are not the leader!", ""))
@@ -381,9 +478,13 @@ object PartyCommandHandler {
                             Command.SINGLE_SUCCESS
                         })
                     .executes { ctx ->
+                        println("[PartyCommands DEBUG] !kick without reason executed")
                         if (Config.settings.kick) {
                             if (PartyUtils.isLeader()) {
-                                val target = StringArgumentType.getString(ctx, "player")
+                                val input = StringArgumentType.getString(ctx, "player")
+                                val target = PartyUtils.findMember(input)
+                                println("[PartyCommands DEBUG] Kick input='$input', target='$target'")
+                                println("[PartyCommands DEBUG] PartyUtils.members: ${PartyUtils.members}")
                                 sendCommand("p kick $target")
                                 respond(formatResponse("Kick", "§aKicked $target", ""))
                             } else {
@@ -433,24 +534,6 @@ object PartyCommandHandler {
         }
 
         // 其他命令
-        Commands.add(object : Command("boop", "Boop a player") {
-            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
-                builder.then(Command.argument("player", StringArgumentType.word())
-                    .executes { ctx ->
-                        if (Config.settings.boop) {
-                            val target = StringArgumentType.getString(ctx, "player")
-                            sendCommand("boop $target")
-                            respond(formatResponse("Boop", "§aBooped $target", ""))
-                        }
-                        Command.SINGLE_SUCCESS
-                    })
-                builder.executes {
-                    respond(formatResponse("Usage", "§c!boop <player>", ""))
-                    Command.SINGLE_SUCCESS
-                }
-            }
-        })
-
         Commands.add(object : Command("invite", "Invite player to party", "inv") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.then(Command.argument("player", StringArgumentType.word())
@@ -557,6 +640,17 @@ object PartyCommandHandler {
             }
         })
 
+        Commands.add(object : Command("gui", "Open config GUI") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.executes {
+                    ConfigGui.open()
+                    modMessage(formatResponse("GUI", "§aOpening config GUI...", ""))
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+
         Commands.add(object : Command("ver", "Show version info", "version") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
@@ -608,9 +702,7 @@ object PartyCommandHandler {
         rawMessage("§e!status §7- Show party status")
         rawMessage("§e!cd <time> §7- Countdown (60, 5m, 1h)")
         rawMessage("§e!clear §7- Clear countdown")
-        rawMessage("§e!cf §7- Coin flip")
-        rawMessage("§e!8ball §7- Magic 8 Ball")
-        rawMessage("§e!dice §7- Roll a dice")
+        rawMessage("§e!fun <cf/8ball/dice/boop/random> §7- Fun commands")
         rawMessage("§e!t1-5 §7- Kuudra")
         rawMessage("§e!f1-7 / m1-7 §7- Dungeon")
         rawMessage("§e!note [message] §7- Send/set note to party")
@@ -618,6 +710,7 @@ object PartyCommandHandler {
         rawMessage("§e!invite <player> §7- Invite player to party")
         rawMessage("§e!forward §7- Toggle party chat forwarding")
         rawMessage("§e!reload §7- Reload config")
+        rawMessage("§e!gui §7- Open config GUI")
         rawMessage("§e!ver §7- Show version info")
         rawMessage("§b§l============================")
     }

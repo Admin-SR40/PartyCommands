@@ -5,7 +5,7 @@ import net.minecraft.client.Minecraft
 
 /**
  * 自动更新队伍状态
- * 只在首次加入服务器时执行 /p list，代理切换不触发
+ * 只在首次加入服务器时执行 /p list，单人世界不执行
  */
 object AutoPartyListUpdater {
     private val mc = Minecraft.getInstance()
@@ -35,7 +35,15 @@ object AutoPartyListUpdater {
         
         // 从主菜单进入游戏（wasInGame = false -> isInGame = true）
         if (!wasInGame && isInGame && !hasDoneFirstUpdate) {
-            scheduleUpdate()
+            // 延迟一点执行，确保服务器信息已加载
+            Thread {
+                Thread.sleep(500)
+                mc.execute {
+                    if (shouldUpdate()) {
+                        scheduleUpdate()
+                    }
+                }
+            }.start()
             hasDoneFirstUpdate = true
         }
         
@@ -48,6 +56,19 @@ object AutoPartyListUpdater {
     }
     
     /**
+     * 检查是否应该更新（非单人世界且是多人服务器）
+     */
+    private fun shouldUpdate(): Boolean {
+        // 检查是否在单人世界
+        if (mc.isSingleplayer) return false
+        
+        // 检查是否有连接
+        val connection = mc.connection ?: return false
+        
+        return true
+    }
+    
+    /**
      * 安排一次自动更新（带冷却）
      */
     private fun scheduleUpdate() {
@@ -57,13 +78,22 @@ object AutoPartyListUpdater {
         
         // 延迟执行，确保连接稳定
         Thread {
-            Thread.sleep(1000)
+            Thread.sleep(1500)
             mc.execute {
-                if (mc.player != null) {
+                if (mc.player != null && !mc.isSingleplayer) {
                     PartyListHandler.startAutoWaiting()
                     sendCommand("p list")
                 }
             }
         }.start()
+    }
+    
+    /**
+     * 手动触发更新（用于切换大厅等场景）
+     */
+    fun refresh() {
+        if (!mc.isSingleplayer && mc.player != null) {
+            scheduleUpdate()
+        }
     }
 }

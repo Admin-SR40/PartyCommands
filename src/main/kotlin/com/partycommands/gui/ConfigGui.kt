@@ -52,21 +52,21 @@ object ConfigGui {
                 "!f1-f7 / !m1-m7 / !t1-t5" to Binding({ Config.settings.queueInstance }, { Config.settings.queueInstance = it })
             )))
             // Info Commands
-            .group(createToggleGroup("Info Commands", "Ping, TPS, FPS, time, location, status", mapOf(
+            .group(createToggleGroup("Info Commands", "Ping, TPS, FPS, time, location, status, countdown", mapOf(
                 "!ping" to Binding({ Config.settings.ping }, { Config.settings.ping = it }),
                 "!tps" to Binding({ Config.settings.tps }, { Config.settings.tps = it }),
                 "!fps" to Binding({ Config.settings.fps }, { Config.settings.fps = it }),
                 "!time" to Binding({ Config.settings.time }, { Config.settings.time = it }),
                 "!location" to Binding({ Config.settings.location }, { Config.settings.location = it }),
-                "!status" to Binding({ Config.settings.status }, { Config.settings.status = it })
+                "!status" to Binding({ Config.settings.status }, { Config.settings.status = it }),
+                "!cd (Countdown)" to Binding({ Config.settings.countdown }, { Config.settings.countdown = it })
             )))
             // Fun Commands
-            .group(createToggleGroup("Fun Commands", "Coinflip, 8ball, dice, boop, countdown", mapOf(
-                "!cf (Coinflip)" to Binding({ Config.settings.coinflip }, { Config.settings.coinflip = it }),
-                "!8ball" to Binding({ Config.settings.eightball }, { Config.settings.eightball = it }),
-                "!dice" to Binding({ Config.settings.dice }, { Config.settings.dice = it }),
-                "!boop" to Binding({ Config.settings.boop }, { Config.settings.boop = it }),
-                "!cd (Countdown)" to Binding({ Config.settings.countdown }, { Config.settings.countdown = it })
+            .group(createToggleGroup("Fun Commands", "cf, 8ball, dice, boop, random", mapOf(
+                "!fun cf" to Binding({ Config.settings.coinflip }, { Config.settings.coinflip = it }),
+                "!fun 8ball" to Binding({ Config.settings.eightball }, { Config.settings.eightball = it }),
+                "!fun dice" to Binding({ Config.settings.dice }, { Config.settings.dice = it }),
+                "!fun boop" to Binding({ Config.settings.boop }, { Config.settings.boop = it })
             )))
             // Note & Sound
             .group(createNoteGroup())
@@ -145,7 +145,7 @@ object ConfigGui {
         return OptionGroup.createBuilder()
             .name(Component.literal("Note & Sound"))
             .description(OptionDescription.of(Component.literal("Note message and countdown sound settings")))
-            .collapsed(false)
+            .collapsed(true)
             .option(
                 dev.isxander.yacl3.api.Option.createBuilder<String>()
                     .name(Component.literal("Note Message"))
@@ -169,8 +169,12 @@ object ConfigGui {
     
     fun open() {
         val mc = Minecraft.getInstance()
-        mc.schedule(Runnable {
-            mc.setScreen(createScreen(mc.screen))
-        })
+        // 延迟到下一 tick 执行，避免在命令执行期间打开 GUI 导致问题
+        Thread {
+            Thread.sleep(50) // 50ms ≈ 1 tick
+            mc.execute {
+                mc.setScreen(createScreen(mc.screen))
+            }
+        }.start()
     }
 }
