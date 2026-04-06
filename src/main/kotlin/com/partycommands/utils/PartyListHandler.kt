@@ -22,6 +22,9 @@ object PartyListHandler {
     // 标记下一个分隔符是否需要被拦截
     private var shouldInterceptNextSeparator = false
     
+    // 标记上一条消息是否为分隔线（用于折叠连续分隔线）
+    private var lastMessageWasSeparator = false
+    
     // /p list 输出的正则
     private val notInPartyPattern = Regex("^You are not currently in a party\\.$")
     private val partySizePattern = Regex("^Party Members \\((\\d+)\\)$")
@@ -43,6 +46,7 @@ object PartyListHandler {
         waitTicks = 0
         collectedLines.clear()
         lastMessageWasNotInParty = false
+        lastMessageWasSeparator = false
     }
     
     /**
@@ -54,6 +58,7 @@ object PartyListHandler {
         waitTicks = 0
         collectedLines.clear()
         lastMessageWasNotInParty = false
+        lastMessageWasSeparator = false
     }
     
     /**
@@ -69,6 +74,7 @@ object PartyListHandler {
             isWaitingForList = false
             lastMessageWasNotInParty = false
             silentMode = false
+            lastMessageWasSeparator = false
             if (!wasSilent) {
                 modMessage(formatResponse("Party Status", "§cFailed to get party list (timeout)", ""))
             }
@@ -90,28 +96,46 @@ object PartyListHandler {
         }
         
         // 如果需要拦截这个分隔符
-        if (shouldInterceptNextSeparator && (trimmed.contains("---") || trimmed.startsWith("-"))) {
+        if (shouldInterceptNextSeparator && isSeparatorLine(trimmed)) {
             shouldInterceptNextSeparator = false
-            return true
+            if (com.partycommands.config.Config.settings.removeSeparator) {
+                lastMessageWasSeparator = true
+                return true
+            }
         }
         
-        // 如果检测到 /p list 的输出格式但不在等待模式，自动开始收集
-        if (!isWaitingForList && trimmed.startsWith("Party Members (")) {
-            isWaitingForList = true
-            silentMode = true  // 静默模式，不显示给用户
-            collectedLines.clear()
-            collectedLines.add(trimmed)
-            return true
+        // 全局拦截纯分隔线消息（不在等待 /p list 时）
+        if (!isWaitingForList && isSeparatorLine(trimmed)) {
+            if (com.partycommands.config.Config.settings.removeSeparator) {
+                lastMessageWasSeparator = true
+                return true
+            }
+            return false
         }
         
-        if (!isWaitingForList) return false
+        // 如果检测到 /p list 的输出格式但不在等待模式，不自动收集
+        // 只有主动调用 !status 时才收集，避免拦截用户手动输入的 /p list
+        // if (!isWaitingForList && trimmed.startsWith("Party Members (")) {
+        //     isWaitingForList = true
+        //     silentMode = true
+        //     collectedLines.clear()
+        //     collectedLines.add(trimmed)
+        //     lastMessageWasSeparator = false
+        //     return true
+        // }
+        
+        if (!isWaitingForList) {
+            lastMessageWasSeparator = false
+            return false
+        }
         
         // 检测分隔线（开头或结尾的）
-        if (trimmed.contains("---") || trimmed.startsWith("-")) {
+        if (isSeparatorLine(trimmed)) {
             // 如果检测到不在队伍的消息后，再遇到分隔线，直接拦截
             if (lastMessageWasNotInParty) {
                 isWaitingForList = false
                 lastMessageWasNotInParty = false
+                lastMessageWasSeparator = false
                 return true
             }
             // 正常收集流程的分隔线
@@ -127,6 +151,7 @@ object PartyListHandler {
                     parseAndDisplay()
                 }
                 isWaitingForList = false
+                lastMessageWasSeparator = false
                 return true
             }
         }
@@ -193,15 +218,15 @@ object PartyListHandler {
             // 解析成员
             membersPattern.find(line)?.let { match ->
                 val membersText = match.groupValues[1]
-                // 先去掉颜色代码，再分割
-                val cleanedText = membersText.noControlCodes
-                cleanedText.split("●").forEach { member ->
-                    val trimmed = member.trim()
-                    if (trimmed.isNotEmpty()) {
-                        val formatted = formatMember(trimmed)
+                // 按 ● 分割，因为 ● 是成员之间的分隔符
+                // 格式: "I1me ● [VIP+] piper045 ● [MVP+] EgoistBlaze ●"
+                membersText.split("●").forEach { member ->
+                    val memberFull = member.trim()
+                    if (memberFull.isNotEmpty()) {
+                        val formatted = formatMember(memberFull)
                         members.add(formatted)
-                        // 清理：rank
-                        val cleanName = trimmed
+                        // 清理：颜色代码、rank
+                        val cleanName = memberFull.noControlCodes
                             .replace("[MVP++]", "")
                             .replace("[MVP+]", "")
                             .replace("[MVP]", "")
@@ -213,7 +238,7 @@ object PartyListHandler {
                             .replace("[MOD]", "")
                             .replace("[HELPER]", "")
                             .trim()
-                        PartyUtils.addMember(cleanName, trimmed)
+                        PartyUtils.addMember(cleanName, memberFull)
                     }
                 }
             }
@@ -251,11 +276,15 @@ object PartyListHandler {
             // 解析成员（同时检测 ● 颜色）
             membersPattern.find(line)?.let { match ->
                 val membersText = match.groupValues[1]
-                // 使用正则匹配每个成员和前面的 ● 颜色
-                val memberPattern = Regex("(§[0-9a-f])?●\\s*((?:\\[.+?])?\\s*\\w+)")
-                memberPattern.findAll(membersText).forEach { memberMatch ->
-                    val bulletColor = memberMatch.groupValues[1] // ● 的颜色
-                    val memberName = memberMatch.groupValues[2].trim()
+                // 使用正则匹配每个成员和后面的 ● 颜色
+                // 格式: "I1me §c● [VIP+] piper045 §a● ..." 
+                // ● 的颜色表示前面成员的状态
+                val memberWithBulletPattern = Regex("((?:\\[.+?])?\\s*[a-zA-Z0-9_]+)(?:\\s*(§[0-9a-f])?●)?")
+                memberWithBulletPattern.findAll(membersText).forEach { memberMatch ->
+                    val memberName = memberMatch.groupValues[1].trim()
+                    val bulletColor = memberMatch.groupValues[2] // 后面 ● 的颜色
+                    
+                    if (memberName.isEmpty()) return@forEach
                     
                     val cleanName = memberName.noControlCodes
                         .replace("[MVP++]", "")
@@ -269,6 +298,8 @@ object PartyListHandler {
                         .replace("[MOD]", "")
                         .replace("[HELPER]", "")
                         .trim()
+                    
+                    if (cleanName.isEmpty()) return@forEach
                     
                     PartyUtils.addMember(cleanName, memberName)
                     
@@ -373,5 +404,13 @@ object PartyListHandler {
                 rawMessage(" §7- $displayMember")
             }
         }
+    }
+    
+    /**
+     * 检查是否为纯分隔线消息
+     * 只拦截由 - = ─ ▬ ═ 和空格组成的消息
+     */
+    private fun isSeparatorLine(text: String): Boolean {
+        return text.matches(Regex("^[\\-▬─══=\\s]+$"))
     }
 }

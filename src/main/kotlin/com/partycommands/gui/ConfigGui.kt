@@ -41,6 +41,8 @@ object ConfigGui {
                 "!warp" to Binding({ Config.settings.warp }, { Config.settings.warp = it }),
                 "!allinvite" to Binding({ Config.settings.allinvite }, { Config.settings.allinvite = it }),
                 "!kick" to Binding({ Config.settings.kick }, { Config.settings.kick = it }),
+                "!kickoffline" to Binding({ Config.settings.kickoffline }, { Config.settings.kickoffline = it }),
+                "!kickall" to Binding({ Config.settings.kickall }, { Config.settings.kickall = it }),
                 "!promote" to Binding({ Config.settings.promote }, { Config.settings.promote = it }),
                 "!demote" to Binding({ Config.settings.demote }, { Config.settings.demote = it }),
                 "!disband" to Binding({ Config.settings.disband }, { Config.settings.disband = it }),
@@ -52,12 +54,14 @@ object ConfigGui {
                 "!f1-f7 / !m1-m7 / !t1-t5" to Binding({ Config.settings.queueInstance }, { Config.settings.queueInstance = it })
             )))
             // Info Commands
-            .group(createToggleGroup("Info Commands", "Ping, TPS, FPS, time, location, status, countdown", mapOf(
+            .group(createToggleGroup("Info Commands", "Ping, TPS, FPS, time, location, coords, holding, status, countdown", mapOf(
                 "!ping" to Binding({ Config.settings.ping }, { Config.settings.ping = it }),
                 "!tps" to Binding({ Config.settings.tps }, { Config.settings.tps = it }),
                 "!fps" to Binding({ Config.settings.fps }, { Config.settings.fps = it }),
                 "!time" to Binding({ Config.settings.time }, { Config.settings.time = it }),
                 "!location" to Binding({ Config.settings.location }, { Config.settings.location = it }),
+                "!coords" to Binding({ Config.settings.coords }, { Config.settings.coords = it }),
+                "!holding" to Binding({ Config.settings.holding }, { Config.settings.holding = it }),
                 "!status" to Binding({ Config.settings.status }, { Config.settings.status = it }),
                 "!cd (Countdown)" to Binding({ Config.settings.countdown }, { Config.settings.countdown = it })
             )))
@@ -115,6 +119,14 @@ object ConfigGui {
                     .name(Component.literal("Show Response Locally"))
                     .description(dev.isxander.yacl3.api.OptionDescription.of(Component.literal("Show command responses in your own chat HUD")))
                     .binding(true, { Config.settings.showResponseLocally }, { Config.settings.showResponseLocally = it })
+                    .controller(TickBoxControllerBuilder::create)
+                    .build()
+            )
+            .option(
+                dev.isxander.yacl3.api.Option.createBuilder<Boolean>()
+                    .name(Component.literal("Remove Separator Lines"))
+                    .description(dev.isxander.yacl3.api.OptionDescription.of(Component.literal("Hide decorative separator lines (---) from Hypixel chat")))
+                    .binding(true, { Config.settings.removeSeparator }, { Config.settings.removeSeparator = it })
                     .controller(TickBoxControllerBuilder::create)
                     .build()
             )

@@ -1,6 +1,6 @@
 # Party Commands Mod
 
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.10-blue.svg)](https://minecraft.net/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-blue.svg)](https://minecraft.net/)
 [![Fabric](https://img.shields.io/badge/Fabric-0.16.10+-blue.svg)](https://fabricmc.net/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-orange.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -17,6 +17,7 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 - **Smart Completion** — Tab completion for all commands, filters other mods' `!` commands
 - **Command History** — Press `↑` to recall previous `!` commands
 - **Auto Queue** — Dungeon countdown with automatic queue execution
+- **Countdown Query** — Check remaining time with `!cd` (no arguments)
 - **Party Tracking** — Automatic member/leader status tracking from chat
 - **YACL Config** — In-game GUI for toggling commands (`/partycmds gui`)
 
@@ -24,7 +25,7 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 
 ## 📦 Installation
 
-1. Install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.10
+1. Install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.11
 2. Install [YACL](https://modrinth.com/mod/yacl) (Yet Another Config Lib)
 3. Download `PartyCommandsMod-*.jar` from [Releases](../../releases)
 4. Place in `.minecraft/mods`
@@ -44,7 +45,7 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 | `!coords` | `!co` | Show coordinates |
 | `!holding` | `!hold` | Show held item |
 | `!status` | — | Show party members & leader |
-| `!cd <time>` | `!countdown` | Start countdown (`60`, `5m`, `1h`) |
+| `!cd [time]` | `!countdown` | Start/query countdown (`60`, `5m`, `5m30s`, `1h30m`) |
 | `!clear` | — | Clear active countdown |
 
 ### Party Management *(Leader only)*
@@ -71,7 +72,7 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 | `!m1` ~ `!m7` | Queue Master Mode floors |
 | `!t1` ~ `!t5` | Queue Kuudra tiers |
 
-All support countdown: `!f7 60` → counts down → auto-queues
+All support countdown: `!f7 60` or `!f7 1m30s` → counts down → auto-queues
 
 ### Fun Commands *(via `!fun`)*
 | Command | Description |
@@ -150,8 +151,8 @@ src/main/
 ├── java/com/partycommands/mixin/
 │   ├── ChatMixin.java
 │   ├── ChatScreenMixin.java
-│   ├── CommandSuggestionsMixin.java
-│   └── ClientPacketListenerMixin.java
+│   ├── ClientPacketListenerMixin.java
+│   └── CommandSuggestionsMixin.java
 ├── kotlin/com/partycommands/
 │   ├── PartyCommandsMod.kt
 │   ├── commands/
@@ -163,11 +164,13 @@ src/main/
 │   ├── gui/
 │   │   └── ConfigGui.kt
 │   └── utils/
+│       ├── AutoPartyListUpdater.kt
 │       ├── ChatListener.kt
 │       ├── ChatUtils.kt
+│       ├── ColorUtils.kt
+│       ├── CountdownManager.kt
 │       ├── PartyListHandler.kt
 │       ├── PartyUtils.kt
-│       ├── CountdownManager.kt
 │       └── ServerUtils.kt
 └── resources/
 ```

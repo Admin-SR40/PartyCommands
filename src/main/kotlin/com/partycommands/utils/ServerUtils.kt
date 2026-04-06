@@ -1,7 +1,7 @@
 package com.partycommands.utils
 
 import net.minecraft.client.Minecraft
-import net.minecraft.Util
+
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -11,13 +11,17 @@ object ServerUtils {
     // TPS 计算
     private val tpsHistory = mutableListOf<Double>()
     private var lastTime = System.currentTimeMillis()
-    private var lastTick = 0L
+    private var lastGameTime = 0L
     
     /**
      * 当前延迟 (ms)
+     * 从 Minecraft 的 debugOverlay.pingLogger 获取
      */
-    var currentPing: Int = 0
-        private set
+    val currentPing: Int
+        get() {
+            val pingLog = mc.gui.debugOverlay.pingLogger
+            return if (pingLog.size() > 0) pingLog.get(0).toInt() else 0
+        }
     
     /**
      * 平均延迟 (ms)
@@ -46,38 +50,43 @@ object ServerUtils {
     
     /**
      * 更新 TPS 计算（应在 tick 事件中调用）
+     * 使用服务器同步的 gameTime（通过 ClientboundSetTimePacket 更新）来估算真实 TPS
      */
     fun updateTps() {
         val currentTime = System.currentTimeMillis()
         val elapsed = currentTime - lastTime
         
         if (elapsed >= 1000) {
-            val ticks = mc.player?.tickCount?.toLong() ?: 0L
-            val tickDiff = ticks - lastTick
-            val tps = (tickDiff * 1000.0 / elapsed).coerceAtMost(20.0)
-            
-            tpsHistory.add(tps)
-            if (tpsHistory.size > 10) {
-                tpsHistory.removeAt(0)
+            val level = mc.level
+            if (level != null) {
+                val gameTime = level.gameTime
+                if (lastGameTime != 0L) {
+                    val timeDiff = gameTime - lastGameTime
+                    val tps = (timeDiff * 1000.0 / elapsed).coerceAtMost(20.0)
+                    
+                    tpsHistory.add(tps)
+                    if (tpsHistory.size > 10) {
+                        tpsHistory.removeAt(0)
+                    }
+                }
+                lastGameTime = gameTime
             }
             
             lastTime = currentTime
-            lastTick = ticks
         }
     }
     
     /**
      * 处理 Pong 响应包（由 Mixin 调用）
+     * 更新平均延迟计算
      */
     @JvmStatic
     fun onPongResponse(time: Long) {
-        currentPing = (Util.getMillis() - time).toInt().coerceAtLeast(0)
-        
         val pingLog = mc.gui.debugOverlay.pingLogger
         val sampleSize = min(pingLog.size(), 20)
         
         if (sampleSize == 0) {
-            averagePing = currentPing
+            averagePing = 0
             return
         }
         

@@ -256,31 +256,61 @@ object CountdownManager {
     
     /**
      * 解析时间字符串
-     * 如：5m = 5分钟, 5h = 5小时, 60 = 60秒
-     * 最大12小时
+     * 支持格式：
+     * - 纯数字：60 = 60秒
+     * - 单一单位：5m = 5分钟, 5h = 5小时, 30s = 30秒
+     * - 复合单位：5m30s, 1h30m, 1h30m45s
+     * 最大12小时 (43200秒)
      */
     fun parseTime(input: String): Int? {
-        val trimmed = input.trim().lowercase()
+        val trimmed = input.trim().lowercase().replace(" ", "")
         
-        return when {
-            trimmed.endsWith("h") -> {
-                val hours = trimmed.dropLast(1).toIntOrNull() ?: return null
-                if (hours > 12) null else hours * 3600
-            }
-            trimmed.endsWith("m") -> {
-                val mins = trimmed.dropLast(1).toIntOrNull() ?: return null
-                if (mins > 720) null else mins * 60
-            }
-            trimmed.endsWith("s") -> {
-                val secs = trimmed.dropLast(1).toIntOrNull() ?: return null
-                if (secs > 43200) null else secs
-            }
-            else -> {
-                // 纯数字，默认秒
-                val secs = trimmed.toIntOrNull() ?: return null
-                if (secs > 43200) null else secs
+        if (trimmed.isEmpty()) return null
+        
+        // 纯数字，默认秒
+        if (trimmed.all { it.isDigit() }) {
+            val secs = trimmed.toIntOrNull() ?: return null
+            return if (secs > 43200) null else secs
+        }
+        
+        // 解析复合格式 (如 5m30s, 1h30m)
+        var totalSeconds = 0
+        var currentNumber = StringBuilder()
+        var hasUnit = false
+        
+        for (char in trimmed) {
+            when (char) {
+                'h', 'm', 's' -> {
+                    if (currentNumber.isEmpty()) return null // 单位前必须有数字
+                    val value = currentNumber.toString().toIntOrNull() ?: return null
+                    if (value < 0) return null
+                    
+                    totalSeconds += when (char) {
+                        'h' -> value * 3600
+                        'm' -> value * 60
+                        's' -> value
+                        else -> 0
+                    }
+                    currentNumber = StringBuilder()
+                    hasUnit = true
+                }
+                in '0'..'9' -> currentNumber.append(char)
+                else -> return null // 非法字符
             }
         }
+        
+        // 如果最后还有数字但没有单位，返回错误（或者可以默认当作秒）
+        if (currentNumber.isNotEmpty()) {
+            // 允许末尾是纯数字（当作秒），例如 "5m30"
+            val value = currentNumber.toString().toIntOrNull() ?: return null
+            if (value < 0) return null
+            totalSeconds += value
+        }
+        
+        // 必须至少有一个单位，或者纯数字已在上面处理
+        if (!hasUnit && currentNumber.isEmpty()) return null
+        
+        return if (totalSeconds > 43200 || totalSeconds <= 0) null else totalSeconds
     }
     
     /**

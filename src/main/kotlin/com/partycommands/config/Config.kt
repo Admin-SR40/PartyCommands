@@ -28,12 +28,16 @@ object Config {
         var fps: Boolean = true,
         var time: Boolean = true,
         var location: Boolean = true,
+        var coords: Boolean = true,
+        var holding: Boolean = true,
         var status: Boolean = true,
         
         // 队伍管理命令（需要队长权限）
         var warp: Boolean = true,
         var allinvite: Boolean = true,
         var kick: Boolean = true,
+        var kickoffline: Boolean = true,
+        var kickall: Boolean = true,
         var promote: Boolean = true,
         var demote: Boolean = true,
         var transfer: Boolean = true,
@@ -58,6 +62,7 @@ object Config {
         // 响应设置
         var respondInPartyChat: Boolean = true,
         var showResponseLocally: Boolean = true,
+        var removeSeparator: Boolean = true,
         
         // Note 功能
         var note: String = "",

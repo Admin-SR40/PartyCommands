@@ -77,6 +77,8 @@ object PartyCommandHandler {
                         val ping = ServerUtils.currentPing
                         val color = getPingColor(ping)
                         respond(formatResponse("Current Ping", "${ping}ms", color))
+                    } else {
+                        respondDisabled("ping")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -94,6 +96,8 @@ object PartyCommandHandler {
                             val color = getTpsColor(tps)
                             respond(formatResponse("Current TPS", tps.toFixed(1), color))
                         }
+                    } else {
+                        respondDisabled("tps")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -107,6 +111,8 @@ object PartyCommandHandler {
                         val fps = ServerUtils.currentFps
                         val color = getFpsColor(fps)
                         respond(formatResponse("Current FPS", fps.toString(), color))
+                    } else {
+                        respondDisabled("fps")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -119,6 +125,8 @@ object PartyCommandHandler {
                     if (Config.settings.time) {
                         val time = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z"))
                         respond(formatResponse("Current Time", time, "§f"))
+                    } else {
+                        respondDisabled("time")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -128,7 +136,11 @@ object PartyCommandHandler {
         Commands.add(object : Command("location", "Show current location", "loc") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.location) respond(formatResponse("Current Location", "Unknown", "§7"))
+                    if (Config.settings.location) {
+                        respond(formatResponse("Current Location", "Unknown", "§7"))
+                    } else {
+                        respondDisabled("location")
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -137,9 +149,11 @@ object PartyCommandHandler {
         Commands.add(object : Command("coords", "Show current coordinates", "co") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.location) {
+                    if (Config.settings.coords) {
                         val pos = getPositionString()
                         respond(formatResponse("Current Coordinates", pos, "§f"))
+                    } else {
+                        respondDisabled("coords")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -149,9 +163,11 @@ object PartyCommandHandler {
         Commands.add(object : Command("holding", "Show held item", "hold") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
-                    if (Config.settings.location) {
+                    if (Config.settings.holding) {
                         val item = mc.player?.mainHandItem?.displayName?.string ?: "Air"
                         respond(formatResponse("Holding", item, "§f"))
+                    } else {
+                        respondDisabled("holding")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -164,6 +180,8 @@ object PartyCommandHandler {
                     if (Config.settings.status) {
                         PartyListHandler.startWaiting()
                         sendCommand("p list")
+                    } else {
+                        respondDisabled("status")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -179,6 +197,8 @@ object PartyCommandHandler {
                         if (Config.settings.coinflip) {
                             val result = if (Random.nextBoolean()) "§6heads" else "§ftails"
                             respond(formatResponse("Coinflip", result, ""))
+                        } else {
+                            respondDisabled("fun cf")
                         }
                         Command.SINGLE_SUCCESS
                     })
@@ -188,6 +208,8 @@ object PartyCommandHandler {
                     .executes {
                         if (Config.settings.eightball) {
                             respond(formatResponse("8-Ball", eightBallResponses.random(), "§d"))
+                        } else {
+                            respondDisabled("fun 8ball")
                         }
                         Command.SINGLE_SUCCESS
                     })
@@ -205,6 +227,8 @@ object PartyCommandHandler {
                                 else -> "§c" // 红色
                             }
                             respond(formatResponse("Dice Roll", roll.toString(), color))
+                        } else {
+                            respondDisabled("fun dice")
                         }
                         Command.SINGLE_SUCCESS
                     })
@@ -217,6 +241,8 @@ object PartyCommandHandler {
                                 val target = StringArgumentType.getString(ctx, "player")
                                 sendCommand("boop $target")
                                 respond(formatResponse("Boop", "§aBooped $target", ""))
+                            } else {
+                                respondDisabled("fun boop")
                             }
                             Command.SINGLE_SUCCESS
                         })
@@ -280,6 +306,8 @@ object PartyCommandHandler {
                         } else {
                             respond(formatResponse("Error", "§cYou are not the leader!", ""))
                         }
+                    } else {
+                        respondDisabled("warp")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -296,6 +324,8 @@ object PartyCommandHandler {
                         } else {
                             respond(formatResponse("Error", "§cYou are not the leader!", ""))
                         }
+                    } else {
+                        respondDisabled("allinvite")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -361,12 +391,16 @@ object PartyCommandHandler {
                             } else {
                                 respond(formatResponse("Error", "§cYou are not the leader!", ""))
                             }
+                        } else {
+                            respondDisabled("promote")
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
                     if (Config.settings.promote) {
                         respond(formatResponse("Usage", "§c!promote <player>", ""))
+                    } else {
+                        respondDisabled("promote")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -397,12 +431,16 @@ object PartyCommandHandler {
                             } else {
                                 respond(formatResponse("Error", "§cYou are not the leader!", ""))
                             }
+                        } else {
+                            respondDisabled("demote")
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
                     if (Config.settings.demote) {
                         respond(formatResponse("Usage", "§c!demote <player>", ""))
+                    } else {
+                        respondDisabled("demote")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -419,6 +457,8 @@ object PartyCommandHandler {
                         } else {
                             respond(formatResponse("Error", "§cYou are not the leader!", ""))
                         }
+                    } else {
+                        respondDisabled("disband")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -431,6 +471,8 @@ object PartyCommandHandler {
                     if (Config.settings.leave) {
                         sendCommand("p leave")
                         respond(formatResponse("Leave", "§aLeft party", ""))
+                    } else {
+                        respondDisabled("leave")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -453,14 +495,11 @@ object PartyCommandHandler {
                     }
                     .then(Command.argument("reason", StringArgumentType.greedyString())
                         .executes { ctx ->
-                            println("[PartyCommands DEBUG] !kick with reason executed")
                             if (Config.settings.kick) {
                                 if (PartyUtils.isLeader()) {
                                     val input = StringArgumentType.getString(ctx, "player")
                                     val target = PartyUtils.findMember(input)
                                     val reason = StringArgumentType.getString(ctx, "reason").noControlCodes
-                                    println("[PartyCommands DEBUG] Kick input='$input', target='$target', reason='$reason'")
-                                    println("[PartyCommands DEBUG] PartyUtils.members: ${PartyUtils.members}")
                                     // 先发送原因到队伍聊天
                                     sendPartyChat("Kicking $target : $reason")
                                     // 延迟 500ms 再踢出，确保消息先显示
@@ -474,27 +513,126 @@ object PartyCommandHandler {
                                 } else {
                                     respond(formatResponse("Error", "§cYou are not the leader!", ""))
                                 }
+                            } else {
+                                respondDisabled("kick")
                             }
                             Command.SINGLE_SUCCESS
                         })
                     .executes { ctx ->
-                        println("[PartyCommands DEBUG] !kick without reason executed")
                         if (Config.settings.kick) {
                             if (PartyUtils.isLeader()) {
                                 val input = StringArgumentType.getString(ctx, "player")
                                 val target = PartyUtils.findMember(input)
-                                println("[PartyCommands DEBUG] Kick input='$input', target='$target'")
-                                println("[PartyCommands DEBUG] PartyUtils.members: ${PartyUtils.members}")
                                 sendCommand("p kick $target")
                                 respond(formatResponse("Kick", "§aKicked $target", ""))
                             } else {
                                 respond(formatResponse("Error", "§cYou are not the leader!", ""))
                             }
+                        } else {
+                            respondDisabled("kick")
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
                     respond(formatResponse("Usage", "§c!kick <player> [reason]", ""))
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        Commands.add(object : Command("kickoffline", "Kick offline members") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.executes {
+                    if (Config.settings.kickoffline) {
+                        if (PartyUtils.isLeader()) {
+                            sendCommand("p kickoffline")
+                            respond(formatResponse("Kickoffline", "§aKicked offline members", ""))
+                        } else {
+                            respond(formatResponse("Error", "§cYou are not the leader!", ""))
+                        }
+                    } else {
+                        respondDisabled("kickoffline")
+                    }
+                    Command.SINGLE_SUCCESS
+                }
+            }
+        })
+
+        Commands.add(object : Command("kickall", "Kick all members except specified") {
+            override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
+                builder.then(Command.argument("exceptions", StringArgumentType.greedyString())
+                    .suggests { _, suggestionsBuilder ->
+                        val myName = mc.player?.name?.string ?: ""
+                        PartyUtils.members
+                            .filter { 
+                                val cleanMember = it.replace("●", "").trim()
+                                !cleanMember.equals(myName, ignoreCase = true) 
+                            }
+                            .distinct()
+                            .forEach { suggestionsBuilder.suggest(it) }
+                        suggestionsBuilder.buildFuture()
+                    }
+                    .executes { ctx ->
+                        if (Config.settings.kickall) {
+                            if (PartyUtils.isLeader()) {
+                                val exceptionsInput = StringArgumentType.getString(ctx, "exceptions")
+                                val exceptions = exceptionsInput.split(" ").map { it.trim() }.filter { it.isNotEmpty() }.toMutableList()
+                                val myName = mc.player?.name?.string ?: ""
+                                exceptions.add(myName)
+                                
+                                val toKick = PartyUtils.members.filter { member ->
+                                    exceptions.none { exception -> member.equals(exception, ignoreCase = true) }
+                                }
+                                
+                                if (toKick.isNotEmpty()) {
+                                    sendPartyChat("Kicking all members...")
+                                    toKick.forEachIndexed { index, target ->
+                                        Thread {
+                                            Thread.sleep(500L * (index + 1))
+                                            mc.execute {
+                                                sendCommand("p kick $target")
+                                            }
+                                        }.start()
+                                    }
+                                    respond(formatResponse("Kickall", "§aKicking ${toKick.size} member(s)", ""))
+                                } else {
+                                    respond(formatResponse("Kickall", "§cNo members to kick", ""))
+                                }
+                            } else {
+                                respond(formatResponse("Error", "§cYou are not the leader!", ""))
+                            }
+                        } else {
+                            respondDisabled("kickall")
+                        }
+                        Command.SINGLE_SUCCESS
+                    })
+                
+                builder.executes {
+                    if (Config.settings.kickall) {
+                        if (PartyUtils.isLeader()) {
+                            val myName = mc.player?.name?.string ?: ""
+                            val toKick = PartyUtils.members.filter { !it.equals(myName, ignoreCase = true) }
+                            
+                            if (toKick.isNotEmpty()) {
+                                sendPartyChat("Kicking all members...")
+                                toKick.forEachIndexed { index, target ->
+                                    Thread {
+                                        Thread.sleep(500L * (index + 1))
+                                        mc.execute {
+                                            sendCommand("p kick $target")
+                                        }
+                                    }.start()
+                                }
+                                respond(formatResponse("Kickall", "§aKicking ${toKick.size} member(s)", ""))
+                            } else {
+                                respond(formatResponse("Kickall", "§cNo members to kick", ""))
+                            }
+                        } else {
+                            respond(formatResponse("Error", "§cYou are not the leader!", ""))
+                        }
+                    } else {
+                        respondDisabled("kickall")
+                    }
                     Command.SINGLE_SUCCESS
                 }
             }
@@ -516,6 +654,8 @@ object PartyCommandHandler {
                                 } else {
                                     respond(formatResponse("Error", "§cInvalid time!", ""))
                                 }
+                            } else {
+                                respondDisabled(cmd)
                             }
                             Command.SINGLE_SUCCESS
                         })
@@ -526,6 +666,8 @@ object PartyCommandHandler {
                             val instance = floorInstances[cmd]!!
                             respond(formatResponse("Queue", "§e${cmd.uppercase()}", ""))
                             sendCommand("joininstance $instance")
+                        } else {
+                            respondDisabled(cmd)
                         }
                         Command.SINGLE_SUCCESS
                     }
@@ -542,6 +684,8 @@ object PartyCommandHandler {
                             val target = StringArgumentType.getString(ctx, "player")
                             sendCommand("p invite $target")
                             respond(formatResponse("Invite", "§aInvited $target", ""))
+                        } else {
+                            respondDisabled("invite")
                         }
                         Command.SINGLE_SUCCESS
                     })
@@ -587,14 +731,26 @@ object PartyCommandHandler {
                             if (seconds != null) {
                                 CountdownManager.startCountdown(seconds, "Custom")
                             } else {
-                                respond(formatResponse("Error", "§cInvalid time format! Use: 60, 5m, 1h (max 12h)", ""))
+                                respond(formatResponse("Error", "§cInvalid time! Use: 60, 5m, 1h, 5m30s (max 12h)", ""))
                             }
+                        } else {
+                            respondDisabled("cd")
                         }
                         Command.SINGLE_SUCCESS
                     })
                 builder.executes {
                     if (Config.settings.countdown) {
-                        respond(formatResponse("Usage", "§c!cd <time> (e.g., 60, 5m, 1h)", ""))
+                        val currentCountdown = CountdownManager.getCurrentCountdown()
+                        if (currentCountdown != null) {
+                            val remaining = currentCountdown.remainingSeconds
+                            val timeStr = formatDuration(remaining)
+                            val label = if (currentCountdown.label == "Custom") "" else " (${currentCountdown.label})"
+                            respond(formatResponse("Countdown", "§e$timeStr §7remaining$label", ""))
+                        } else {
+                            respond(formatResponse("Countdown", "§7No active countdown", ""))
+                        }
+                    } else {
+                        respondDisabled("cd")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -606,6 +762,8 @@ object PartyCommandHandler {
                 builder.executes {
                     if (Config.settings.countdown) {
                         CountdownManager.clearCountdown()
+                    } else {
+                        respondDisabled("clear")
                     }
                     Command.SINGLE_SUCCESS
                 }
@@ -666,6 +824,34 @@ object PartyCommandHandler {
     }
 
     /**
+     * 格式化持续时间显示（用于倒计时）
+     */
+    private fun formatDuration(seconds: Int): String {
+        return when {
+            seconds >= 3600 -> {
+                val hours = seconds / 3600
+                val mins = (seconds % 3600) / 60
+                val secs = seconds % 60
+                if (mins > 0 || secs > 0) "${hours}h ${mins}m ${secs}s"
+                else "${hours}h"
+            }
+            seconds >= 60 -> {
+                val mins = seconds / 60
+                val secs = seconds % 60
+                if (secs > 0) "${mins}m ${secs}s" else "${mins}m"
+            }
+            else -> "${seconds}s"
+        }
+    }
+
+    /**
+     * 发送命令已禁用的提示
+     */
+    private fun respondDisabled(command: String) {
+        respond(formatResponse("Error", "§c!$command is disabled in config.", ""))
+    }
+
+    /**
      * 发送响应
      */
     private fun respond(message: String) {
@@ -690,6 +876,8 @@ object PartyCommandHandler {
         rawMessage("§e!promote <player> §7- Promote member")
         rawMessage("§e!demote <player> §7- Demote member")
         rawMessage("§e!kick <player> §7- Kick member from party")
+        rawMessage("§e!kickoffline §7- Kick offline members")
+        rawMessage("§e!kickall [players...] §7- Kick all members except specified")
         rawMessage("§e!disband §7- Disband the party")
         rawMessage("§e!leave §7- Leave the party")
         rawMessage("§e!ping §7- Show latency")

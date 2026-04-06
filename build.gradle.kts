@@ -23,16 +23,16 @@ repositories {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.21.10")
+    minecraft("com.mojang:minecraft:1.21.11")
     mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:0.16.10")
     modImplementation("net.fabricmc:fabric-language-kotlin:1.13.1+kotlin.2.1.10")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:0.138.4+1.21.10")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.141.3+1.21.11")
 
     modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.2.1")
     
     // YACL - Yet Another Config Lib
-    modImplementation("dev.isxander:yet-another-config-lib:3.8.2+1.21.10-fabric")
+    modImplementation("dev.isxander:yet-another-config-lib:3.8.2+1.21.11-fabric")
 }
 
 loom {

@@ -17,6 +17,7 @@ MoulConfig/
 YetAnotherConfigLib/
 Skyblocker/
 cloth-config/
+Odin/
 *.patch
 
 # Kotlin
