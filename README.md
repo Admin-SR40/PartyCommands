@@ -14,6 +14,7 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 ## ✨ Features
 
 - **Direct Commands** — Type `!command` without switching to party chat
+- **Quick Chat** — Press `` ` `` to open chat with `!` prefix pre-filled
 - **Smart Completion** — Tab completion for all commands, filters other mods' `!` commands
 - **Command History** — Press `↑` to recall previous `!` commands
 - **Auto Queue** — Dungeon countdown with automatic queue execution
@@ -29,6 +30,18 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 2. Install [YACL](https://modrinth.com/mod/yacl) (Yet Another Config Lib)
 3. Download `PartyCommandsMod-*.jar` from [Releases](../../releases)
 4. Place in `.minecraft/mods`
+
+---
+
+## ⌨️ Key Bindings
+
+Configure in **Options → Controls → Key Binds → Party Commands**
+
+| Binding | Default | Description |
+|---------|---------|-------------|
+| Open Command Chat | `` ` `` | Open chat with `!` prefix pre-filled |
+| Open Config GUI | — *(unbound)* | Quick open settings GUI |
+| Toggle Mod | — *(unbound)* | Enable/disable the mod |
 
 ---
 
@@ -57,6 +70,8 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 | `!promote <player>` | — | Promote member |
 | `!demote <player>` | — | Demote member |
 | `!kick <player> [reason]` | `!k` | Kick member (reason optional) |
+| `!kickoffline` | — | Kick offline members |
+| `!kickall [exceptions...]` | — | Kick all members except specified |
 | `!disband` | — | Disband party |
 
 ### Party Commands
@@ -105,7 +120,7 @@ All support countdown: `!f7 60` or `!f7 1m30s` → counts down → auto-queues
 
 ## ⚙️ Configuration
 
-Use `/partycmds gui` for in-game configuration:
+Use `/partycmds gui` or key binding for in-game configuration:
 - **General** — Mod enabled, command prefix
 - **Info Commands** — Toggle ping, tps, fps, etc.
 - **Party Management** — Toggle warp, kick, promote, etc.
@@ -123,11 +138,24 @@ Config file: `.minecraft/config/partycommands.json`
   "fps": true,
   "warp": true,
   "kick": true,
+  "kickoffline": true,
+  "kickall": true,
+  "promote": true,
+  "demote": true,
+  "transfer": true,
+  "disband": true,
+  "leave": true,
+  "invite": true,
   "coinflip": true,
+  "eightball": true,
+  "dice": true,
+  "boop": true,
   "queueInstance": true,
+  "countdown": true,
   "respondInPartyChat": true,
   "showResponseLocally": true,
-  "countdownSound": true
+  "countdownSound": true,
+  "note": ""
 }
 ```
 
@@ -168,6 +196,7 @@ src/main/
 │       ├── ChatListener.kt
 │       ├── ChatUtils.kt
 │       ├── ColorUtils.kt
+│       ├── CommandKeyBinding.kt
 │       ├── CountdownManager.kt
 │       ├── PartyListHandler.kt
 │       ├── PartyUtils.kt
@@ -180,7 +209,7 @@ src/main/
 ## 🙏 Credits
 
 - **Odin Mod** — Ping logic and feature inspiration
-- **Meteor Client** — Brigadier patterns
+- **Meteor Client** — Brigadier patterns and key binding ideas
 - **YACL** — Config GUI by isXander
 - **Fabric Team** — Fabric Loader and API
 

@@ -6,6 +6,7 @@ import com.partycommands.config.Config
 import com.partycommands.gui.ConfigGui
 import com.partycommands.utils.AutoPartyListUpdater
 import com.partycommands.utils.ChatListener
+import com.partycommands.utils.CommandKeyBinding
 import com.partycommands.utils.PartyListHandler
 import com.partycommands.utils.PartyUtils
 import net.fabricmc.api.ClientModInitializer
@@ -26,6 +27,7 @@ class PartyCommandsMod : ClientModInitializer {
         PartyCommandHandler.init()
         ChatListener.init()
         AutoPartyListUpdater.init()
+        CommandKeyBinding.init()
         
         // 注册 /partycmds 配置命令
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->

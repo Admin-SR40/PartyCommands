@@ -1,4 +1,8 @@
 {
   "partycommands.name": "Party Commands",
-  "partycommands.command.reloaded": "Configuration reloaded!"
+  "partycommands.command.reloaded": "Configuration reloaded!",
+  "key.partycommands.open": "Open Command Chat",
+  "key.partycommands.gui": "Open Config GUI",
+  "key.partycommands.toggle": "Toggle Mod",
+  "key.category.partycommands.general": "Party Commands"
 }
