@@ -1,5 +1,6 @@
 # Party Commands Mod
 
+[![Version](https://img.shields.io/badge/Version-1.0-blue.svg)]()
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-blue.svg)](https://minecraft.net/)
 [![Fabric](https://img.shields.io/badge/Fabric-0.16.10+-blue.svg)](https://fabricmc.net/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.0-orange.svg)](https://kotlinlang.org/)
@@ -29,7 +30,7 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 
 1. Install [Fabric Loader](https://fabricmc.net/use/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.11
 2. Install [YACL](https://modrinth.com/mod/yacl) (Yet Another Config Lib)
-3. Download `PartyCommandsMod-*.jar` from [Releases](../../releases)
+3. Download `PartyCommandsMod-1.0.jar` from [Releases](../../releases)
 4. Place in `.minecraft/mods`
 
 ---
@@ -168,7 +169,7 @@ Config file: `.minecraft/config/partycommands.json`
 ```bash
 ./gradlew build
 ```
-Output: `build/libs/PartyCommandsMod-0.1.jar`
+Output: `build/libs/PartyCommandsMod-1.0.jar`
 
 ### Requirements
 - JDK 21+

@@ -131,6 +131,14 @@ object ConfigGui {
                     .controller(TickBoxControllerBuilder::create)
                     .build()
             )
+            .option(
+                dev.isxander.yacl3.api.Option.createBuilder<Boolean>()
+                    .name(Component.literal("Auto Reply to !mod"))
+                    .description(dev.isxander.yacl3.api.OptionDescription.of(Component.literal("Automatically reply when party members send !mod")))
+                    .binding(true, { Config.settings.mod }, { Config.settings.mod = it })
+                    .controller(TickBoxControllerBuilder::create)
+                    .build()
+            )
             .build()
     }
     

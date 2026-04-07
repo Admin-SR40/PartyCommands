@@ -58,6 +58,7 @@ object Config {
         var boop: Boolean = true,
         var invite: Boolean = true,
         var countdown: Boolean = true,
+        var mod: Boolean = true,
         
         // 响应设置
         var respondInPartyChat: Boolean = true,

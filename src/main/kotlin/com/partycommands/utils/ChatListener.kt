@@ -1,5 +1,6 @@
 package com.partycommands.utils
 
+import com.partycommands.config.Config
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents
 import net.minecraft.network.chat.Component
 
@@ -190,6 +191,47 @@ object ChatListener {
         
         // 检测 !cancel（任何聊天，只要包含队友名字）
         handleCancelCommand(message)
+        
+        // 检测 !mod（队友询问 Mod 信息）
+        handleModCommand(message)
+    }
+    
+    /**
+     * 处理 !mod 命令
+     * 当队友发送 !mod 时，自动回复 Mod 信息
+     */
+    private fun handleModCommand(message: String) {
+        if (!Config.settings.mod) return
+        
+        // 检查是否是纯 !mod 命令（不是 !mod something）
+        val cleanMessage = message.replace(Regex("§[0-9a-fk-or]"), "")
+        
+        // 必须是 Party Chat 且包含 !mod
+        if (!cleanMessage.startsWith("Party >")) return
+        if (!cleanMessage.contains("!mod")) return
+        
+        // 提取发送者
+        val pattern = Regex("^Party > (?:\\[.+?] )?(.+?):")
+        val match = pattern.find(cleanMessage) ?: return
+        
+        val senderRaw = match.groupValues[1].trim()
+        val senderClean = senderRaw.replace(Regex("\\[.+?]\\s*"), "").trim()
+        val myName = mc.player?.name?.string ?: return
+        
+        // 如果是自己发送的，跳过
+        if (senderClean.equals(myName, ignoreCase = true)) return
+        
+        // 延迟 500ms 回复，避免看起来太像机器人
+        Thread {
+            Thread.sleep(500)
+            mc.execute {
+                sendPartyChat("Using PartyCommands Mod by Admin_SR40")
+            }
+            Thread.sleep(300)
+            mc.execute {
+                sendPartyChat("Available at GitHub (Admin-SR40/PartyCommands)")
+            }
+        }.start()
     }
     
     /**
