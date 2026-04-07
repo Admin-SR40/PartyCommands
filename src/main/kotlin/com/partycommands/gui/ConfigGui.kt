@@ -37,7 +37,7 @@ object ConfigGui {
             // Response Settings
             .group(createResponseGroup())
             // Party Management
-            .group(createToggleGroup("Party Management", "Warp, invite, kick, promote, demote, disband, leave", mapOf(
+            .group(createToggleGroup("Party Management", "Warp, invite, kick, promote, demote, transfer, disband, leave", mapOf(
                 "!warp" to Binding({ Config.settings.warp }, { Config.settings.warp = it }),
                 "!allinvite" to Binding({ Config.settings.allinvite }, { Config.settings.allinvite = it }),
                 "!kick" to Binding({ Config.settings.kick }, { Config.settings.kick = it }),
@@ -45,6 +45,7 @@ object ConfigGui {
                 "!kickall" to Binding({ Config.settings.kickall }, { Config.settings.kickall = it }),
                 "!promote" to Binding({ Config.settings.promote }, { Config.settings.promote = it }),
                 "!demote" to Binding({ Config.settings.demote }, { Config.settings.demote = it }),
+                "!transfer" to Binding({ Config.settings.transfer }, { Config.settings.transfer = it }),
                 "!disband" to Binding({ Config.settings.disband }, { Config.settings.disband = it }),
                 "!invite" to Binding({ Config.settings.invite }, { Config.settings.invite = it }),
                 "!leave" to Binding({ Config.settings.leave }, { Config.settings.leave = it })

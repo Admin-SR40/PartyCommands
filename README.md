@@ -18,6 +18,7 @@ A **Fabric** client-side mod for **Hypixel SkyBlock** that streamlines party com
 - **Smart Completion** — Tab completion for all commands, filters other mods' `!` commands
 - **Command History** — Press `↑` to recall previous `!` commands
 - **Auto Queue** — Dungeon countdown with automatic queue execution
+- **Coordinates** — Quick coordinate sharing with `!coords` and `!loc`
 - **Countdown Query** — Check remaining time with `!cd` (no arguments)
 - **Party Tracking** — Automatic member/leader status tracking from chat
 - **YACL Config** — In-game GUI for toggling commands (`/partycmds gui`)
@@ -54,7 +55,7 @@ Configure in **Options → Controls → Key Binds → Party Commands**
 | `!tps` | — | Show server TPS |
 | `!fps` | — | Show current FPS |
 | `!time` | — | Show local date/time |
-| `!location` | `!loc` | Show current location |
+| `!location` | `!loc` | Show coordinates |
 | `!coords` | `!co` | Show coordinates |
 | `!holding` | `!hold` | Show held item |
 | `!status` | — | Show party members & leader |

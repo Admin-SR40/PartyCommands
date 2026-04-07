@@ -133,11 +133,12 @@ object PartyCommandHandler {
             }
         })
 
-        Commands.add(object : Command("location", "Show current location", "loc") {
+        Commands.add(object : Command("location", "Show current coordinates", "loc") {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
                     if (Config.settings.location) {
-                        respond(formatResponse("Current Location", "Unknown", "§7"))
+                        val pos = getPositionString()
+                        respond(formatResponse("Coordinates", pos, "§f"))
                     } else {
                         respondDisabled("location")
                     }
