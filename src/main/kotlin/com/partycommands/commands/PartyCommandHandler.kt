@@ -454,7 +454,8 @@ object PartyCommandHandler {
                     if (Config.settings.disband) {
                         if (PartyUtils.isLeader()) {
                             sendCommand("p disband")
-                            respond(formatResponse("Disband", "§aParty disbanded", ""))
+                            // 强制本地显示，不发送到队伍聊天（队伍已解散）
+                            modMessage(formatResponse("Disband", "§aParty disbanded", ""))
                         } else {
                             respond(formatResponse("Error", "§cYou are not the leader!", ""))
                         }
@@ -471,7 +472,8 @@ object PartyCommandHandler {
                 builder.executes {
                     if (Config.settings.leave) {
                         sendCommand("p leave")
-                        respond(formatResponse("Leave", "§aLeft party", ""))
+                        // 强制本地显示，不发送到队伍聊天（已经离开了）
+                        modMessage(formatResponse("Leave", "§aLeft party", ""))
                     } else {
                         respondDisabled("leave")
                     }

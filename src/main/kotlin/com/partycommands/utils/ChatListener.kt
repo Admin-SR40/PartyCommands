@@ -26,6 +26,9 @@ object ChatListener {
     private val dungeonJoin = Regex("^Party Finder > (\\w{1,16}) joined the dungeon group! ")
     private val kuudraJoin = Regex("^Party Finder > ((?:\\[[^]]*?])? ?)?(\\w{1,16}) joined the group!")
     
+    // PartyFinder 排队检测
+    private val partyFinderQueued = Regex("^Party Finder > Your party has been queued in the party finder!$")
+    
     private val disbandPatterns = listOf(
         Regex("^((?:\\[[^]]*?])? ?)?(\\w{1,16}) has disbanded the party!$"),
         Regex("^You have been kicked from the party by ((?:\\[[^]]*?])? ?)?(\\w{1,16})$"),
@@ -186,6 +189,17 @@ object ChatListener {
         // Kuudra 加入
         kuudraJoin.find(message)?.let {
             PartyUtils.addMember(it.groupValues[2])
+            return
+        }
+        
+        // PartyFinder 创建/排队检测 - 自动更新队伍状态
+        partyFinderQueued.find(message)?.let {
+            // PartyFinder 排队成功，说明肯定在队伍里
+            if (!PartyUtils.isInParty) {
+                PartyUtils.isInParty = true
+                // 延迟刷新队伍列表
+                AutoPartyListUpdater.refresh()
+            }
             return
         }
         
