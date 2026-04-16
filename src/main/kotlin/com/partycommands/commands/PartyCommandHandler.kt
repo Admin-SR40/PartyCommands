@@ -815,7 +815,7 @@ object PartyCommandHandler {
             override fun build(builder: LiteralArgumentBuilder<SharedSuggestionProvider>) {
                 builder.executes {
                     rawMessage("§b§l===== PartyCommands =====")
-                    rawMessage("§eVersion: §a1.0")
+                    rawMessage("§eVersion: §a1.1")
                     rawMessage("§eBased on: §aOdin Mod / Meteor Client")
                     rawMessage("§eAuthor: §aAdmin_SR40")
                     rawMessage("§b§l========================")
